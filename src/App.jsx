@@ -13,10 +13,8 @@ import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import Mfa from '@/pages/Mfa';
+import Workstation from '@/pages/Workstation';
 import Dashboard from '@/pages/Dashboard';
-import PreExam from '@/pages/PreExam';
-import LiveGuidance from '@/pages/LiveGuidance';
-import PostExam from '@/pages/PostExam';
 import History from '@/pages/History';
 
 const AuthenticatedApp = () => {
@@ -53,11 +51,9 @@ const AuthenticatedApp = () => {
 
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route element={<AppLayout />}>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/pre-exam" element={<PreExam />} />
-          <Route path="/live" element={<LiveGuidance />} />
-          <Route path="/post-exam" element={<PostExam />} />
-          <Route path="/history" element={<History />} />
+          <Route path="/" element={<Workstation />} />
+          <Route path="/overview" element={<Dashboard />} />
+          <Route path="/archive" element={<History />} />
         </Route>
       </Route>
 

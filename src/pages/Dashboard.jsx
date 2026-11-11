@@ -85,9 +85,9 @@ export default function Dashboard() {
   const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
 
   const phases = [
-    { to: '/pre-exam', label: 'Before', title: 'Protocol fit', copy: 'Patient-specific technique and positioning plan.', icon: Waypoints, count: `${stats.inRoomCount} in room` },
-    { to: '/live', label: 'During', title: 'Live guidance', copy: 'Sensor reads position, angulation and centring.', icon: ScanEye, count: stats.inRoomCount ? `${stats.inRoomCount} active` : 'room ready' },
-    { to: '/post-exam', label: 'After', title: 'Image evaluation', copy: 'Anatomical criteria, cut-off and artefact checks.', icon: Microscope, count: `${stats.awaitingCount} to review` },
+    { to: '/', label: 'Before', title: 'Protocol fit', copy: 'Patient-specific technique and positioning plan.', icon: Waypoints, count: `${stats.inRoomCount} in room` },
+    { to: '/', label: 'During', title: 'Live guidance', copy: 'Sensor reads position, angulation and centring.', icon: ScanEye, count: stats.inRoomCount ? `${stats.inRoomCount} active` : 'room ready' },
+    { to: '/', label: 'After', title: 'Image evaluation', copy: 'Anatomical criteria, cut-off and artefact checks.', icon: Microscope, count: `${stats.awaitingCount} to review` },
   ];
 
   if (loading) {
@@ -111,7 +111,7 @@ export default function Dashboard() {
           </p>
         </div>
         <Link
-          to="/pre-exam"
+          to="/"
           className="group inline-flex items-center gap-2 self-start rounded-full bg-cyan-300 px-5 py-2.5 text-[13px] font-semibold text-[#04121A] transition-all hover:bg-cyan-200 hover:shadow-[0_0_30px_-6px_rgba(61,220,255,0.7)]"
         >
           <ScanLine className="h-4 w-4" strokeWidth={2} />
@@ -125,7 +125,7 @@ export default function Dashboard() {
           <p className="mx-auto mt-2 max-w-sm text-[12.5px] leading-relaxed text-slate-500">
             Build a patient-specific protocol to see RAYID's quality picture build up in this room.
           </p>
-          <Link to="/pre-exam" className="mt-5 inline-flex items-center gap-2 rounded-full bg-cyan-300 px-4 py-2 text-[12.5px] font-semibold text-[#04121A]">
+          <Link to="/" className="mt-5 inline-flex items-center gap-2 rounded-full bg-cyan-300 px-4 py-2 text-[12.5px] font-semibold text-[#04121A]">
             Start the first examination
           </Link>
         </section>
@@ -230,7 +230,7 @@ export default function Dashboard() {
                   <p className="eyebrow">Latest</p>
                   <h2 className="mt-1.5 font-heading text-[15px] font-medium text-white">Recent examinations</h2>
                 </div>
-                <Link to="/history" className="inline-flex items-center gap-1 text-[11.5px] text-slate-400 transition-colors hover:text-cyan-300">
+                <Link to="/archive" className="inline-flex items-center gap-1 text-[11.5px] text-slate-400 transition-colors hover:text-cyan-300">
                   View all <ChevronRight className="h-3.5 w-3.5" />
                 </Link>
               </div>
@@ -269,7 +269,7 @@ export default function Dashboard() {
               <div className="mt-4 space-y-2.5">
                 {phases.map(({ to, label, title, copy, icon: Icon, count }) => (
                   <Link
-                    key={to}
+                    key={label}
                     to={to}
                     className="group flex items-start gap-3 rounded-xl border border-white/[0.06] bg-white/[0.015] p-3 transition-all hover:border-cyan-300/25 hover:bg-cyan-400/[0.05]"
                   >
