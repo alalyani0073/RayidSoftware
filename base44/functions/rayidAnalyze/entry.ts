@@ -128,6 +128,8 @@ Return JSON only.`;
 
     const exam = body?.exam || {};
     const criteria = Array.isArray(body?.criteria) ? body.criteria.slice(0, 12) : [];
+    const tolerances = body?.tolerances || {};
+    const sample = body?.sample || {};
     if (!exam.protocol_name) return Response.json({ error: 'exam is required' }, { status: 400 });
 
     const prompt = `${PERSONA}
@@ -139,15 +141,20 @@ ACQUISITION
 - Protocol: ${text(exam.protocol_name)}
 - Patient: ${num(exam.age, 45)} years, ${text(exam.sex, 'unspecified')}, ${num(exam.weight_kg, 75)} kg
 - Technique used: ${num(exam.kvp, 110)} kVp, ${num(exam.mas, 5)} mAs, ${num(exam.sid_cm, 180)} cm SID
-- Sensor telemetry: rotation ${num(exam.rotation_deg, 0).toFixed(1)}°, centring offset ${num(exam.centring_offset_mm, 0)} mm from midline
-- Rejection threshold in this department: rotation above 3°, centring offset above 15 mm
+- Simulated alignment telemetry: rotation ${num(exam.rotation_deg, 0).toFixed(1)}°, centring offset ${num(exam.centring_offset_mm, 0)} mm from the reference centring point
+- Acceptance tolerance for this projection: rotation ±${num(tolerances.rotation, 3)}°, centring ±${num(tolerances.centring, 15)} mm
+- Radiograph under review: ${
+      sample.variant === 'rejected'
+        ? `a technical fault is present — ${text(sample.defect, 'positioning or anatomical coverage error')}`
+        : 'the reference acquisition for this projection, with no technical fault visible'
+    }
 
 CRITERIA TO CHECK
 ${criteria.length ? criteria.map((c, i) => `${i + 1}. ${c}`).join('\n') : '1. Anatomy of interest fully included\n2. No rotation\n3. Adequate exposure\n4. No avoidable artefact'}
 
 INSTRUCTIONS
 1. Judge each criterion as pass, partial or fail with a short note (under 14 words).
-2. findings: 0-4 real issues (cut-off anatomy, artefact, positioning error, exposure, collimation). Empty list when the image is clean.
+2. findings: 0-4 real issues (cut-off anatomy, artefact, positioning error, exposure, collimation). Describe each fault you were told is present and name the anatomy affected. Empty list only when no fault is present.
 3. quality_score: integer 0-100. Below 75 means repeat. 75-84 means review. 85+ means accepted.
 4. verdict must agree with the score and findings.
 5. summary: two sentences maximum, radiographer-facing.

@@ -1,6 +1,7 @@
 import { Loader2, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import useWorkstation from '@/hooks/useWorkstation';
+import ConsoleBar from '@/components/workstation/ConsoleBar';
 import Worklist from '@/components/workstation/Worklist';
 import PatientHeader from '@/components/workstation/PatientHeader';
 import AcquisitionPanel from '@/components/workstation/AcquisitionPanel';
@@ -28,10 +29,21 @@ function IdleStage({ loading }) {
           {loading ? 'Reading the modality worklist' : 'Select a patient from the worklist'}
         </h2>
         <p className="mt-1.5 text-[11.5px] leading-relaxed text-slate-500">
-          RAYID sits inside this DR console: it optimises technique before exposure, watches positioning during it, and
-          grades the image afterwards.
+          This is the room’s DR console. RAYID runs as a layer inside it: technique before exposure,
+          alignment during it, image quality afterwards.
         </p>
       </div>
+    </div>
+  );
+}
+
+function RayidOff() {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center border-t border-white/[0.07] px-4 text-center">
+      <Sparkles className="h-4 w-4 text-slate-600" strokeWidth={1.8} />
+      <p className="mt-2 text-[10.5px] leading-snug text-slate-500">
+        RAYID is switched off. Enable it in the toolbar to bring the assistant back into this console.
+      </p>
     </div>
   );
 }
@@ -39,9 +51,10 @@ function IdleStage({ loading }) {
 export default function Workstation() {
   const ws = useWorkstation();
   const open = Boolean(ws.exam);
+  const tol = ws.tolerances;
 
-  const rot = rotationAdvice(ws.rotation);
-  const cen = centringAdvice(ws.centring);
+  const rot = rotationAdvice(ws.rotation, tol.rotation);
+  const cen = centringAdvice(ws.centring, tol.centring);
 
   const messages = [];
   if (!rot.ok) messages.push({ ok: false, text: rot.text });
@@ -52,29 +65,36 @@ export default function Workstation() {
     ws.stage === 'review'
       ? ws.exam
       : ws.plan || {
-          kvp: ws.protocol?.default_kvp,
-          mas: ws.protocol?.default_mas,
-          sid_cm: ws.protocol?.default_sid_cm,
-          grid: ws.protocol?.grid,
+          kvp: ws.projection.default_kvp,
+          mas: ws.projection.default_mas,
+          sid_cm: ws.projection.default_sid_cm,
+          grid: ws.projection.grid,
           focal_spot_mm: 0.6,
         };
 
-  const source = ws.stage === 'review' ? 'Acquired' : ws.plan ? 'RAYID' : 'Protocol';
+  const source = ws.stage === 'review' ? 'Acquired' : ws.rayidOn && ws.plan ? 'RAYID' : 'Protocol';
 
   return (
     <div className="flex min-h-0 flex-col lg:h-[calc(100vh-44px)] lg:overflow-hidden">
+      <ConsoleBar
+        stage={ws.stage}
+        open={open}
+        rayidOn={ws.rayidOn}
+        onToggleRayid={ws.toggleRayid}
+      />
+
       {open ? (
         <PatientHeader exam={ws.exam} stage={ws.stage} onBack={ws.closeExam} />
       ) : (
         <div className="border-b border-white/[0.07] bg-[#0D1216] px-3 py-2">
-          <span className="ws-label">Workstation · Room 2</span>
+          <span className="ws-label">Modality worklist · Room 2</span>
           <p className="mt-0.5 text-[11px] text-slate-400">
-            DigitalDiagnost console with the RAYID assistant layer · simulated
+            DigitalDiagnost console with the RAYID assistant layer · simulated data
           </p>
         </div>
       )}
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[236px_minmax(0,1fr)_290px]">
+      <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[236px_minmax(0,1fr)_292px]">
         <div className={cn('min-h-0 flex-col border-r border-white/[0.07]', open ? 'hidden lg:flex' : 'flex')}>
           <Worklist
             exams={ws.exams}
@@ -88,9 +108,17 @@ export default function Workstation() {
           {!open ? (
             <IdleStage loading={ws.loading} />
           ) : ws.stage === 'pre' ? (
-            <PreExamStage exam={ws.exam} plan={ws.plan} onStart={() => ws.setStage('positioning')} />
+            <PreExamStage
+              exam={ws.exam}
+              projection={ws.projection}
+              plan={ws.plan}
+              rayidOn={ws.rayidOn}
+              onChooseProjection={ws.chooseProjection}
+              onStart={() => ws.setStage('positioning')}
+            />
           ) : ws.stage === 'positioning' ? (
             <PositioningStage
+              projection={ws.projection}
               rotation={ws.rotation}
               centring={ws.centring}
               onRotation={ws.setRotation}
@@ -101,13 +129,16 @@ export default function Workstation() {
               }}
               onAcquire={ws.acquire}
               capturing={ws.capturing}
-              acquired={Boolean(ws.assessment)}
+              rayidOn={ws.rayidOn}
             />
           ) : (
             <ReviewStage
               exam={ws.exam}
+              projection={ws.projection}
               assessment={ws.assessment}
               evaluating={ws.evaluating}
+              variant={ws.variant}
+              rayidOn={ws.rayidOn}
               onRepeat={ws.repeat}
               onOverride={ws.override}
               onClose={ws.closeExam}
@@ -118,23 +149,29 @@ export default function Workstation() {
         <div className={cn('min-h-0 flex-col border-l border-white/[0.07]', open ? 'flex' : 'hidden lg:flex')}>
           <AcquisitionPanel
             values={values}
-            baseline={ws.protocol}
+            baseline={ws.projection}
             source={source}
-            note={ws.stage === 'pre' ? 'Compared with the departmental protocol for this view.' : 'Values as acquired.'}
+            note={ws.stage === 'pre' ? 'Compared with the protocol for this projection.' : 'Values as acquired.'}
           />
-          <RayidPanel
-            stage={ws.stage}
-            plan={ws.plan}
-            planning={ws.planning}
-            planError={ws.planError}
-            rotation={ws.rotation}
-            centring={ws.centring}
-            rotOk={rot.ok}
-            cenOk={cen.ok}
-            messages={messages}
-            assessment={ws.assessment}
-            evaluating={ws.evaluating}
-          />
+          {ws.rayidOn ? (
+            <RayidPanel
+              stage={ws.stage}
+              projection={ws.projection}
+              plan={ws.plan}
+              planning={ws.planning}
+              planError={ws.planError}
+              rotation={ws.rotation}
+              centring={ws.centring}
+              tolerance={tol}
+              rotOk={rot.ok}
+              cenOk={cen.ok}
+              messages={messages}
+              assessment={ws.assessment}
+              evaluating={ws.evaluating}
+            />
+          ) : (
+            <RayidOff />
+          )}
         </div>
       </div>
     </div>

@@ -1,35 +1,33 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { base44 } from '@/api/base44Client';
+import { projectionByKey, projectionFor } from '@/lib/protocols';
 
-const techniqueOf = (plan, protocol) => ({
-  kvp: plan?.kvp ?? protocol?.default_kvp,
-  mas: plan?.mas ?? protocol?.default_mas,
-  sid_cm: plan?.sid_cm ?? protocol?.default_sid_cm,
+const techniqueOf = (plan, projection) => ({
+  kvp: plan?.kvp ?? projection?.default_kvp,
+  mas: plan?.mas ?? projection?.default_mas,
+  sid_cm: plan?.sid_cm ?? projection?.default_sid_cm,
 });
 
 export default function useWorkstation() {
   const [exams, setExams] = useState([]);
-  const [protocols, setProtocols] = useState([]);
   const [loading, setLoading] = useState(true);
   const [exam, setExam] = useState(null);
   const [stage, setStage] = useState('pre');
+  const [rayidOn, setRayidOn] = useState(true);
   const [plan, setPlan] = useState(null);
   const [planning, setPlanning] = useState(false);
   const [planError, setPlanError] = useState(null);
   const [rotation, setRotation] = useState(0);
   const [centring, setCentring] = useState(0);
   const [assessment, setAssessment] = useState(null);
+  const [variant, setVariant] = useState('accepted');
   const [evaluating, setEvaluating] = useState(false);
   const [capturing, setCapturing] = useState(false);
   const plans = useRef({});
 
   const load = useCallback(async () => {
-    const [list, protocolList] = await Promise.all([
-      base44.entities.Exam.list('-exam_date', 30),
-      base44.entities.Protocol.list('name', 30),
-    ]);
+    const list = await base44.entities.Exam.list('-exam_date', 40);
     setExams(list);
-    setProtocols(protocolList);
     setLoading(false);
   }, []);
 
@@ -37,35 +35,30 @@ export default function useWorkstation() {
     load();
   }, [load]);
 
-  const protocol = useMemo(() => {
-    if (!exam) return null;
-    const [name, view] = String(exam.protocol_name || '')
-      .split('—')
-      .map((part) => part.trim());
-    return (
-      protocols.find((item) => item.name === name && item.view === view) ||
-      protocols.find((item) => item.name === name) ||
-      null
-    );
-  }, [exam, protocols]);
+  const projection = useMemo(() => projectionFor(exam?.protocol_name), [exam?.protocol_name]);
+  const tolerances = projection.tolerances;
+  const withinTolerance =
+    Math.abs(rotation) <= tolerances.rotation && Math.abs(centring) <= tolerances.centring;
 
-  const buildPlan = useCallback(async (record, protocolRecord) => {
-    if (!record || !protocolRecord) return;
-    if (plans.current[record.id]) {
-      setPlan(plans.current[record.id]);
+  const buildPlan = useCallback(async (record, target) => {
+    if (!record) return;
+    const key = `${record.id}:${target.key}`;
+    if (plans.current[key]) {
+      setPlan(plans.current[key]);
       return;
     }
     setPlanning(true);
     setPlanError(null);
+    setPlan(null);
     try {
       const response = await base44.functions.invoke('rayidAnalyze', {
         mode: 'pre_exam',
-        protocol: protocolRecord,
+        protocol: target,
         patient: { age: record.age, sex: record.sex, weight_kg: record.weight_kg },
       });
       const next = (response?.data ?? response)?.plan;
       if (next) {
-        plans.current[record.id] = next;
+        plans.current[key] = next;
         setPlan(next);
       }
     } catch (error) {
@@ -76,36 +69,66 @@ export default function useWorkstation() {
   }, []);
 
   useEffect(() => {
-    if (exam && protocol) buildPlan(exam, protocol);
-  }, [exam, protocol, buildPlan]);
+    if (exam) buildPlan(exam, projection);
+  }, [exam, projection, buildPlan]);
 
   const openExam = useCallback((record) => {
     setExam(record);
     setStage('pre');
     setAssessment(null);
+    setVariant('accepted');
     setRotation(0);
     setCentring(0);
-    setPlan(plans.current[record.id] || null);
     setPlanError(null);
+    setPlan(null);
   }, []);
 
   const closeExam = useCallback(() => {
     setExam(null);
     setStage('pre');
     setAssessment(null);
+    setVariant('accepted');
     setPlan(null);
     setRotation(0);
     setCentring(0);
   }, []);
 
+  const chooseProjection = useCallback(
+    async (key) => {
+      if (!exam) return;
+      const next = projectionByKey(key);
+      setExam({
+        ...exam,
+        protocol_name: next.label,
+        body_part: next.region,
+        laterality: next.laterality,
+      });
+      setStage('pre');
+      setAssessment(null);
+      setVariant('accepted');
+      setPlan(null);
+      setRotation(0);
+      setCentring(0);
+      await base44.entities.Exam.update(exam.id, {
+        protocol_name: next.label,
+        body_part: next.region,
+        laterality: next.laterality,
+      });
+    },
+    [exam]
+  );
+
   const acquire = useCallback(async () => {
-    if (!exam || !protocol) return;
-    const technique = techniqueOf(plan, protocol);
+    if (!exam) return;
+    const technique = techniqueOf(plan, projection);
+    const sampleVariant = withinTolerance ? 'accepted' : 'rejected';
     setCapturing(true);
     try {
       await base44.entities.Exam.update(exam.id, {
         status: 'completed',
         exam_date: new Date().toISOString(),
+        protocol_name: projection.label,
+        body_part: projection.region,
         ...technique,
         rotation_deg: rotation,
         centring_offset_mm: centring,
@@ -113,19 +136,26 @@ export default function useWorkstation() {
 
       const acquired = {
         ...exam,
+        protocol_name: projection.label,
         ...technique,
         status: 'completed',
         rotation_deg: rotation,
         centring_offset_mm: centring,
       };
       setExam(acquired);
+      setVariant(sampleVariant);
       setStage('review');
       setEvaluating(true);
 
       const response = await base44.functions.invoke('rayidAnalyze', {
         mode: 'post_exam',
         exam: acquired,
-        criteria: protocol.criteria || [],
+        criteria: projection.criteria,
+        tolerances: projection.tolerances,
+        sample: {
+          variant: sampleVariant,
+          defect: sampleVariant === 'rejected' ? projection.defect : null,
+        },
       });
       const result = (response?.data ?? response)?.assessment;
       setAssessment(result || null);
@@ -147,12 +177,13 @@ export default function useWorkstation() {
       setEvaluating(false);
       setCapturing(false);
     }
-  }, [exam, protocol, plan, rotation, centring, load]);
+  }, [exam, plan, projection, rotation, centring, withinTolerance, load]);
 
   const repeat = useCallback(async () => {
     if (!exam) return;
     setStage('positioning');
     setAssessment(null);
+    setVariant('accepted');
     setRotation(0);
     setCentring(0);
     setExam({ ...exam, status: 'in_progress', verdict: 'pending' });
@@ -175,14 +206,19 @@ export default function useWorkstation() {
     exams,
     loading,
     exam,
-    protocol,
+    projection,
     stage,
+    rayidOn,
+    toggleRayid: () => setRayidOn((value) => !value),
     plan,
     planning,
     planError,
     rotation,
     centring,
+    tolerances,
+    withinTolerance,
     assessment,
+    variant,
     evaluating,
     capturing,
     setStage,
@@ -190,6 +226,7 @@ export default function useWorkstation() {
     setCentring,
     openExam,
     closeExam,
+    chooseProjection,
     acquire,
     repeat,
     override,

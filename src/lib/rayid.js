@@ -61,16 +61,16 @@ export const habitusLabel = (weight) => {
   return 'Awaiting patient data';
 };
 
-export const rotationAdvice = (rotation) => {
+export const rotationAdvice = (rotation, tolerance = 2) => {
   const abs = Math.abs(rotation);
-  if (abs <= 2) return { ok: true, text: 'Rotation within tolerance' };
+  if (abs <= tolerance) return { ok: true, text: `Rotation ${abs.toFixed(1)}° · within ±${tolerance}°` };
   const direction = rotation > 0 ? 'clockwise' : 'counter-clockwise';
-  return { ok: false, text: `Rotate patient ${abs.toFixed(1)}° ${direction}` };
+  return { ok: false, text: `Rotate patient ${(abs - tolerance).toFixed(1)}° ${direction}` };
 };
 
-export const centringAdvice = (offset) => {
+export const centringAdvice = (offset, tolerance = 12) => {
   const abs = Math.abs(offset);
-  if (abs <= 12) return { ok: true, text: 'Centred on the midline' };
+  if (abs <= tolerance) return { ok: true, text: `Centring ${abs} mm · within ±${tolerance} mm` };
   const direction = offset > 0 ? 'left' : 'right';
-  return { ok: false, text: `Shift patient ${abs} mm to the ${direction}` };
+  return { ok: false, text: `Shift patient ${abs - tolerance} mm to the ${direction}` };
 };

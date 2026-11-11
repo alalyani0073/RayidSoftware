@@ -19,11 +19,13 @@ function Metric({ label, value, ok }) {
 
 export default function RayidPanel({
   stage,
+  projection = null,
   plan,
   planning,
   planError,
   rotation = 0,
   centring = 0,
+  tolerance = { rotation: 3, centring: 15 },
   rotOk = true,
   cenOk = true,
   messages = [],
@@ -105,9 +107,29 @@ export default function RayidPanel({
 
         {stage === 'positioning' && (
           <div className="space-y-2 px-3 py-2.5">
-            <Metric label="Patient rotation" value={`${rotation > 0 ? '+' : ''}${rotation.toFixed(1)}°`} ok={rotOk} />
-            <Metric label="Centring offset" value={`${centring > 0 ? '+' : ''}${centring} mm`} ok={cenOk} />
-            <Metric label="Central ray" value={rotOk && cenOk ? 'Perpendicular' : 'Off-axis'} ok={rotOk && cenOk} />
+            {projection && (
+              <div className="rounded-[4px] border border-white/[0.07] bg-white/[0.02] px-2 py-1.5">
+                <span className="ws-label">Centring point</span>
+                <p className="text-[10.5px] leading-snug text-slate-300">{projection.centring}</p>
+                <span className="ws-label mt-1.5 block">Central ray</span>
+                <p className="text-[10.5px] leading-snug text-slate-400">{projection.cr}</p>
+              </div>
+            )}
+            <Metric
+              label={`Rotation · tol ±${tolerance.rotation}°`}
+              value={`${rotation > 0 ? '+' : ''}${rotation.toFixed(1)}°`}
+              ok={rotOk}
+            />
+            <Metric
+              label={`Centring · tol ±${tolerance.centring} mm`}
+              value={`${centring > 0 ? '+' : ''}${centring} mm`}
+              ok={cenOk}
+            />
+            <Metric
+              label="Alignment"
+              value={rotOk && cenOk ? 'Within criteria' : 'Correction needed'}
+              ok={rotOk && cenOk}
+            />
 
             <div className="mt-1 space-y-1.5">
               {messages.map((message, index) => (
