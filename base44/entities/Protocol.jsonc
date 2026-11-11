@@ -1,0 +1,88 @@
+{
+  "name": "Protocol",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Examination"
+    },
+    "view": {
+      "type": "string",
+      "title": "View"
+    },
+    "region": {
+      "type": "string",
+      "title": "Region"
+    },
+    "default_kvp": {
+      "type": "number",
+      "title": "Standard kVp"
+    },
+    "default_mas": {
+      "type": "number",
+      "title": "Standard mAs"
+    },
+    "default_sid_cm": {
+      "type": "number",
+      "title": "Standard SID (cm)"
+    },
+    "grid": {
+      "type": "string",
+      "title": "Grid"
+    },
+    "positioning": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Positioning baseline"
+    },
+    "criteria": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Anatomical criteria"
+    },
+    "active": {
+      "type": "boolean",
+      "title": "Active",
+      "default": true
+    }
+  },
+  "required": [
+    "name",
+    "view"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

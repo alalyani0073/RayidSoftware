@@ -1,0 +1,196 @@
+{
+  "name": "Exam",
+  "type": "object",
+  "properties": {
+    "patient_name": {
+      "type": "string",
+      "title": "Patient name"
+    },
+    "patient_ref": {
+      "type": "string",
+      "title": "Patient reference"
+    },
+    "age": {
+      "type": "number",
+      "title": "Age"
+    },
+    "sex": {
+      "type": "string",
+      "title": "Sex",
+      "enum": [
+        "male",
+        "female",
+        "other"
+      ],
+      "enumColors": [
+        "blue",
+        "pink",
+        "gray"
+      ]
+    },
+    "weight_kg": {
+      "type": "number",
+      "title": "Weight (kg)"
+    },
+    "protocol_name": {
+      "type": "string",
+      "title": "Protocol"
+    },
+    "body_part": {
+      "type": "string",
+      "title": "Body part"
+    },
+    "laterality": {
+      "type": "string",
+      "title": "Laterality",
+      "enum": [
+        "not_applicable",
+        "left",
+        "right"
+      ],
+      "enumColors": [
+        "gray",
+        "purple",
+        "purple"
+      ],
+      "default": "not_applicable"
+    },
+    "technologist": {
+      "type": "string",
+      "title": "Technologist"
+    },
+    "exam_date": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Exam date"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": [
+        "queued",
+        "in_progress",
+        "completed"
+      ],
+      "enumColors": [
+        "gray",
+        "yellow",
+        "green"
+      ],
+      "default": "queued"
+    },
+    "verdict": {
+      "type": "string",
+      "title": "Verdict",
+      "enum": [
+        "pending",
+        "accepted",
+        "review",
+        "repeat_required"
+      ],
+      "enumColors": [
+        "gray",
+        "green",
+        "yellow",
+        "red"
+      ],
+      "default": "pending"
+    },
+    "quality_score": {
+      "type": "number",
+      "title": "Quality score"
+    },
+    "rejection_reason": {
+      "type": "string",
+      "title": "Rejection reason"
+    },
+    "kvp": {
+      "type": "number",
+      "title": "kVp"
+    },
+    "mas": {
+      "type": "number",
+      "title": "mAs"
+    },
+    "sid_cm": {
+      "type": "number",
+      "title": "SID (cm)"
+    },
+    "rotation_deg": {
+      "type": "number",
+      "title": "Patient rotation (deg)"
+    },
+    "centring_offset_mm": {
+      "type": "number",
+      "title": "Centring offset (mm)"
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Findings"
+    },
+    "ai_summary": {
+      "type": "string",
+      "title": "RAYID summary"
+    },
+    "recommendation": {
+      "type": "string",
+      "title": "Recommendation"
+    }
+  },
+  "required": [
+    "patient_name",
+    "protocol_name"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        }
+      ]
+    },
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
