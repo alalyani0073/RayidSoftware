@@ -108,13 +108,38 @@
       "type": "number",
       "title": "kVp"
     },
+    "ma": {
+      "type": "number",
+      "title": "mA"
+    },
     "mas": {
       "type": "number",
       "title": "mAs"
     },
+    "exposure_time_ms": {
+      "type": "number",
+      "title": "Exposure time (ms)"
+    },
+    "aec_mode": {
+      "type": "string",
+      "enum": [
+        "off",
+        "on"
+      ],
+      "enumColors": [
+        "gray",
+        "blue"
+      ],
+      "title": "AEC mode",
+      "default": "off"
+    },
     "sid_cm": {
       "type": "number",
       "title": "SID (cm)"
+    },
+    "tube_angle_deg": {
+      "type": "number",
+      "title": "Tube angulation (degrees)"
     },
     "rotation_deg": {
       "type": "number",
@@ -138,6 +163,87 @@
     "recommendation": {
       "type": "string",
       "title": "Recommendation"
+    },
+    "simulation_snapshot": {
+      "type": "object",
+      "title": "Simulated acquisition snapshot",
+      "properties": {
+        "scenario": {
+          "type": "string"
+        },
+        "position": {
+          "type": "object",
+          "properties": {
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            },
+            "rotation": {
+              "type": "number"
+            },
+            "angle": {
+              "type": "number"
+            },
+            "flexion": {
+              "type": "number"
+            },
+            "limb": {
+              "type": "boolean"
+            },
+            "breathing": {
+              "type": "boolean"
+            },
+            "coverage": {
+              "type": "boolean"
+            },
+            "visible": {
+              "type": "boolean"
+            }
+          }
+        },
+        "technique": {
+          "type": "object",
+          "properties": {
+            "kvp": {
+              "type": "number"
+            },
+            "ma": {
+              "type": "number"
+            },
+            "mas": {
+              "type": "number"
+            },
+            "sid_cm": {
+              "type": "number"
+            },
+            "aec_mode": {
+              "type": "string"
+            }
+          }
+        },
+        "sample": {
+          "type": "object",
+          "properties": {
+            "cutoff": {
+              "type": "boolean"
+            },
+            "motion": {
+              "type": "boolean"
+            },
+            "artifact": {
+              "type": "boolean"
+            },
+            "rotated": {
+              "type": "boolean"
+            },
+            "alignment": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
     }
   },
   "required": [

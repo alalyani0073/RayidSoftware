@@ -4,6 +4,9 @@
 
 @layer base {
   :root {
+    --ws-toolbar: 216 12% 17%;
+    --ws-surface: 216 11% 13%;
+    --ws-canvas: 216 13% 7%;
     --background: 220 14% 5%;
     --foreground: 210 20% 92%;
     --card: 218 13% 9%;
@@ -44,6 +47,9 @@
   }
 
   .dark {
+    --ws-toolbar: 216 12% 17%;
+    --ws-surface: 216 11% 13%;
+    --ws-canvas: 216 13% 7%;
     --background: 220 14% 5%;
     --foreground: 210 20% 92%;
     --card: 218 13% 9%;

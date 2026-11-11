@@ -11,6 +11,9 @@ module.exports = {
   			sm: 'calc(var(--radius) - 4px)'
   		},
   		colors: {
+  			'ws-toolbar': 'hsl(var(--ws-toolbar))',
+  			'ws-surface': 'hsl(var(--ws-surface))',
+  			'ws-canvas': 'hsl(var(--ws-canvas))',
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {

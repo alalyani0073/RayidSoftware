@@ -1,54 +1,16 @@
-import { cn } from '@/lib/utils';
-
-const fmt = (value, digits = 0) => {
-  const num = Number(value);
-  if (!Number.isFinite(num)) return '—';
-  return digits ? num.toFixed(digits) : String(Math.round(num));
-};
-
-export default function AcquisitionPanel({ values, baseline, source, note }) {
-  const rows = [
-    { label: 'kVp', value: fmt(values?.kvp), std: fmt(baseline?.default_kvp), unit: '' },
-    { label: 'mAs', value: fmt(values?.mas, 1), std: fmt(baseline?.default_mas, 1), unit: '' },
-    { label: 'SID', value: fmt(values?.sid_cm), std: fmt(baseline?.default_sid_cm), unit: 'cm' },
-    { label: 'Grid', value: values?.grid || '—', std: baseline?.grid || '—', unit: '' },
-    { label: 'Focal spot', value: fmt(values?.focal_spot_mm, 1), std: '0.6', unit: 'mm' },
-  ];
-
-  return (
-    <section className="border-b border-white/[0.07]">
-      <div className="flex items-center justify-between px-3 pb-1.5 pt-2">
-        <span className="ws-label">Acquisition</span>
-        <span className="font-mono text-[8.5px] uppercase tracking-[0.1em] text-slate-500">{source}</span>
-      </div>
-
-      <div className="px-3 pb-2">
-        <div className="flex items-center gap-2 border-b border-white/[0.05] pb-1">
-          <span className="flex-1" />
-          <span className="w-16 text-right font-mono text-[8px] uppercase tracking-[0.1em] text-cyan-300/70">Active</span>
-          <span className="w-12 text-right font-mono text-[8px] uppercase tracking-[0.1em] text-slate-600">Std</span>
-        </div>
-
-        {rows.map((row) => {
-          const changed = row.value !== row.std && row.value !== '—';
-          return (
-            <div key={row.label} className="flex items-center gap-2 border-b border-white/[0.04] py-1 last:border-0">
-              <span className="flex-1 text-[11px] text-slate-400">{row.label}</span>
-              <span className="num w-16 truncate text-right text-[13px] text-white">
-                {row.value}
-                <span className="ml-0.5 text-[9px] text-slate-500">{row.unit}</span>
-              </span>
-              <span className={cn('num w-12 truncate text-right text-[11px]', changed ? 'text-amber-300/90' : 'text-slate-600')}>
-                {row.std}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-
-      {note && (
-        <p className="border-t border-white/[0.05] px-3 py-1.5 text-[10px] leading-snug text-slate-500">{note}</p>
-      )}
-    </section>
-  );
+import ExposureField from '@/components/workstation/ExposureField';
+import { exposureTime } from '@/components/workstation/simulation';
+export default function AcquisitionPanel({ ws }) {
+  const locked = ws.stage === 'review' || ws.busy;
+  const t = ws.stage === 'review' ? ws.capture.technique : ws.technique;
+  const r = ws.rayidOn && !locked && ws.recommendationStatus !== 'dismissed' ? ws.plan : null;
+  const fields = [{ key: 'kvp', label: 'kVp', unit: 'kV', min: 40, max: 150 }, { key: 'ma', label: 'mA', unit: 'mA', min: 50, max: 800, step: 10 }, { key: 'mas', label: t.aec_mode === 'on' ? 'mAs target / backup' : 'mAs', unit: 'mAs', min: 0.1, max: 200, step: 0.1 }, { key: 'sid_cm', label: 'SID', unit: 'cm', min: 80, max: 200 }];
+  return <section id="exposure-controls" className="border-b border-border bg-ws-surface p-3">
+    <div className="mb-3 flex justify-between text-xs"><h2 className="font-semibold">{locked ? 'ACQUIRED TECHNIQUE' : 'GENERATOR / EXPOSURE'}</h2><span className="text-muted-foreground">{locked ? 'Recorded' : 'Operator control'}</span></div>
+    <div className="grid grid-cols-2 gap-3">{fields.map(f => <ExposureField key={f.key} {...f} value={t[f.key]} disabled={locked} recommended={r?.[f.key]} onChange={v => ws.changeTechnique(f.key, v)} />)}</div>
+    <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-xs"><span className="text-muted-foreground">Exposure time = mAs / mA</span><strong className="font-mono text-base">{exposureTime(t)} ms</strong></div>
+    {r && <p className="mt-1 text-right text-xs text-primary">Recommended: {r.exposure_time_ms} ms</p>}
+    <label className="mt-3 flex items-center justify-between text-xs text-muted-foreground">AEC<select aria-label="Automatic exposure control" disabled={locked || !ws.projection.aec} value={t.aec_mode} onChange={e => ws.changeTechnique('aec_mode', e.target.value)} className="h-8 rounded-sm border border-input bg-ws-canvas px-2 text-foreground disabled:opacity-50"><option value="off">OFF · manual</option>{ws.projection.aec && <option value="on">ON · simulated</option>}</select></label>
+    <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground">{!ws.projection.aec ? 'AEC not modeled for this receptor / projection.' : t.aec_mode === 'on' ? 'AEC cutoff is not modeled. Displayed mAs and time are illustrative target / backup values.' : 'AEC available on the selected Bucky; manual exposure currently selected.'} Grid: {ws.projection.grid}.</p>
+  </section>;
 }

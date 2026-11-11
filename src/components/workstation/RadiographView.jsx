@@ -1,84 +1,17 @@
 import { Image } from '@/components/ui/image';
-import { cn } from '@/lib/utils';
-
-const TONE = {
-  high: 'border-rose-400 bg-rose-500/90 text-[#1A0507]',
-  medium: 'border-amber-300 bg-amber-400/90 text-[#1A1204]',
-  low: 'border-sky-300 bg-sky-400/85 text-[#04121A]',
-};
-
-/**
- * Acquired radiograph for the selected projection. Two sample images exist per
- * projection (criteria met / technical fault); the one shown reflects the
- * simulated alignment result of this examination.
- */
-export default function RadiographView({
-  projection,
-  variant = 'accepted',
-  scanning = false,
-  rayidOn = true,
-}) {
-  const rejected = variant === 'rejected';
-  const boxes = rayidOn && rejected && !scanning ? projection.detections || [] : [];
-
-  return (
-    <div
-      className={cn(
-        'relative mx-auto w-full overflow-hidden rounded-[3px] border bg-black',
-        scanning ? 'border-cyan-400/45' : rayidOn && rejected ? 'border-amber-400/40' : 'border-white/12'
-      )}
-    >
-      <Image
-        src={projection.radiograph[variant]}
-        alt={`${projection.label} radiograph`}
-        fittingType="fit"
-        originWidth={1024}
-        originHeight={1024}
-        className="block w-full"
-      />
-
-      {boxes.map((box, index) => (
-        <div
-          key={`${box.label}-${index}`}
-          className="pointer-events-none absolute"
-          style={{ left: `${box.x}%`, top: `${box.y}%`, width: `${box.w}%`, height: `${box.h}%` }}
-        >
-          <span
-            className={cn(
-              'absolute inset-0 rounded-[2px] border border-dashed',
-              box.severity === 'high' ? 'border-rose-400' : 'border-amber-300'
-            )}
-          />
-          <span
-            className={cn(
-              'absolute -top-[13px] left-0 whitespace-nowrap rounded-[2px] px-1 py-[1px] font-mono text-[7px] uppercase tracking-[0.1em]',
-              TONE[box.severity] || TONE.low
-            )}
-          >
-            {box.label}
-          </span>
-        </div>
-      ))}
-
-      {scanning && (
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute inset-0 bg-black/30" />
-          <div className="absolute inset-x-0 h-1/4 animate-rayid-sweep bg-gradient-to-b from-transparent via-cyan-300/25 to-transparent" />
-          <div className="absolute inset-x-0 bottom-3 flex items-center justify-center gap-1.5 font-mono text-[8px] uppercase tracking-[0.2em] text-cyan-200">
-            <span className="h-1 w-1 animate-rayid-pulse rounded-full bg-cyan-300" />
-            checking anatomical criteria
-          </div>
-        </div>
-      )}
-
-      <div className="pointer-events-none absolute inset-x-1.5 top-1.5 flex items-center justify-between gap-2">
-        <span className="rounded-[2px] bg-black/70 px-1.5 py-[1px] font-mono text-[7.5px] uppercase tracking-[0.14em] text-slate-300">
-          {projection.label} · DICOM
-        </span>
-        <span className="rounded-[2px] bg-black/70 px-1.5 py-[1px] font-mono text-[7.5px] uppercase tracking-[0.14em] text-slate-400">
-          sample image
-        </span>
-      </div>
+export default function RadiographView({ projection, capture, view, rayidOn, assessment }) {
+  const s = capture.sample;
+  const ratios = { knee_ap: '1067 / 1913', knee_lat: '1133 / 1939', chest_pa: '1929 / 2207', chest_ap: '2240 / 2262', abdomen_ap: '2043 / 2494' };
+  const filter = `contrast(${view.contrast}%) brightness(${view.brightness}%) invert(${view.inverted ? 1 : 0}) blur(${s.motion ? 2.8 : 0}px)`;
+  const [imageWidth, imageHeight] = ratios[projection.key].split('/').map(Number);
+  return <div className="mx-auto w-full" style={{ maxWidth: `min(420px, 100%, calc(clamp(260px, calc(100dvh - 370px), 650px) * ${imageWidth / imageHeight}))` }}>
+    <div className="relative overflow-hidden border border-border bg-ws-canvas" style={{ aspectRatio: ratios[projection.key] }}>
+      <Image src={projection.radiograph} alt={`Real teaching radiograph for ${projection.label}; ${s.cutoff || s.motion || s.artifact || s.rotated ? 'deliberately modified to demonstrate technical faults' : 'reference sample'}`} fittingType="fit" className="h-full w-full" style={{ filter, transform: `scale(${view.zoom}) rotate(${s.rotated ? 6 : 0}deg)` }} />
+      {s.cutoff && <div className="absolute inset-x-0 bottom-0 h-[23%] border-t border-border bg-ws-canvas" />}
+      {s.artifact && <div className="absolute left-[53%] top-[37%] h-16 w-10 rotate-12 rounded-full border-[7px] border-foreground bg-foreground/20" />}
+      {rayidOn && assessment && <>{s.cutoff && <div className="absolute inset-x-1 bottom-[23%] border-t-2 border-dashed border-destructive"><span className="bg-ws-canvas px-2 py-1 text-[10px] text-destructive">SIMULATED CUT-OFF: {projection.cutoff}</span></div>}{s.artifact && <span className="absolute left-2 top-[36%] bg-ws-canvas/90 px-2 py-1 text-[11px] text-chart-3">Added external artifact</span>}{s.motion && <span className="absolute left-2 top-2 bg-ws-canvas/90 px-2 py-1 text-[11px] text-chart-3">Simulated motion blur</span>}</>}
     </div>
-  );
+    <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground">Real teaching image, not this patient's radiograph. {s.cutoff || s.motion || s.artifact || s.rotated ? 'Faults are deliberately added display modifications, not AI-detected pathology.' : 'Reference sample; technical results are scripted.'}</p>
+    <p className="mt-1 text-[10px] text-muted-foreground"><a href={projection.imageSource} target="_blank" rel="noreferrer" className="underline">Source: {projection.credit}</a>{projection.credit.includes('BY-SA') && <span> · modified demonstrations shared under the same license</span>}</p>
+  </div>;
 }
