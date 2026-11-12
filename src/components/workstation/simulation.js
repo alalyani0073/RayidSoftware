@@ -1,7 +1,22 @@
 const round = (n, places = 1) => Number(n.toFixed(places));
 export const exposureTime = (t) => round(1000 * t.mas / t.ma, 2);
 export const baselineTechnique = (p) => ({ kvp: p.default_kvp, ma: p.default_ma, mas: p.default_mas, sid_cm: p.default_sid_cm, aec_mode: 'off' });
-export const initialPosition = (p) => ({ x: 0, y: 0, rotation: 0, angle: p.angle, flexion: p.flexion ? (p.flexion[0] + p.flexion[1]) / 2 : 0, limb: true, breathing: true, coverage: true, visible: true });
+export const initialPosition = (p) => ({ x: 0, y: 0, rotation: 0, angle: p.angle, flexion: p.flexion ? (p.flexion[0] + p.flexion[1]) / 2 : 0, limb: true, breathing: true, coverage: true, visible: true, collimation: { w: p.field.w, h: p.field.h } });
+export const collimation = (s, p) => s.collimation || { w: p.field.w, h: p.field.h };
+export const fieldSizeCm = (s, p) => {
+  const c = collimation(s, p);
+  return [round((c.w / p.field.w) * p.field_cm[0], 0), round((c.h / p.field.h) * p.field_cm[1], 0)];
+};
+export function collimationIssues(s, p) {
+  const c = collimation(s, p);
+  const tolerance = 5;
+  const size = fieldSizeCm(s, p).join(' × ');
+  const expected = p.field_cm.join(' × ');
+  const issues = [];
+  if (p.field.w - c.w > tolerance || p.field.h - c.h > tolerance) issues.push(`Collimation too tight: the ${size} cm field excludes required anatomy. Open the shutters to approximately ${expected} cm to include the ${p.criteria[0].toLowerCase()}.`);
+  if (c.w - p.field.w > tolerance || c.h - p.field.h > tolerance) issues.push(`Collimation wider than required: ${size} cm field. Close the shutters to approximately ${expected} cm to reduce patient dose without excluding anatomy.`);
+  return issues;
+}
 export function recommendedTechnique(patient, p) {
   const weight = Number(patient.weight_kg) || 70;
   const size = weight < 55 ? 0.8 : weight > 100 ? 1.5 : weight > 80 ? 1.2 : 1;
@@ -35,7 +50,8 @@ export function positioningIssues(s, p) {
   return issues;
 }
 export function sampleFor(position, scenario, p) {
-  return { cutoff: scenario === 'cutoff' || !position.coverage || Math.abs(position.y) > p.tolerances.centring * 1.5,
+  const c = collimation(position, p);
+  return { cutoff: scenario === 'cutoff' || !position.coverage || Math.abs(position.y) > p.tolerances.centring * 1.5 || p.field.w - c.w > 5 || p.field.h - c.h > 5,
     motion: scenario === 'motion' || !position.breathing, artifact: scenario === 'artifact',
     rotated: Math.abs(position.rotation) > p.tolerances.rotation, alignment: positioningIssues(position, p).length > 0 };
 }
@@ -48,8 +64,10 @@ export function scriptedAssessment(capture, p) {
   if (s.alignment && !s.rotated && !s.cutoff) score -= 16;
   if (techniqueFaults.length) score -= 12;
   if (s.cutoff && s.motion) score -= 18;
+  const collimationFaults = collimationIssues(capture.position, p);
   const findings = [
     { label: 'Anatomical coverage / cut-off', pass: !s.cutoff, critical: s.cutoff, note: s.cutoff ? `Simulated exclusion of ${p.cutoff}. Required anatomy is missing regardless of percentage.` : `${p.criteria[0]} in the scripted reference scenario.` },
+    { label: 'Collimation', pass: !collimationFaults.length, critical: false, note: collimationFaults.length ? collimationFaults.join(' ') : `Simulated field of ${fieldSizeCm(capture.position, p).join(' × ')} cm matches the demonstration field size.` },
     { label: 'Patient rotation', pass: !s.rotated, critical: false, note: s.rotated ? `Simulated ${capture.position.rotation}° rotational misalignment. Check ${p.rotationCriterion.toLowerCase()}.` : p.rotationCriterion },
     { label: 'Positioning / angulation', pass: !positionFaults.length, critical: false, note: positionFaults.length ? positionFaults.join(' ') : `${p.centring}; ${p.angulation}.` },
     { label: 'External artifacts', pass: !s.artifact, critical: s.artifact, note: s.artifact ? 'Added radiopaque-object overlay obscures required anatomy. Remove the object before repeating.' : 'No added external artifact in this sample scenario.' },
@@ -57,7 +75,7 @@ export function scriptedAssessment(capture, p) {
     { label: 'Exposure selection', pass: !techniqueFaults.length, critical: false, note: techniqueFaults.length ? techniqueFaults.join(' ') : 'Selected technique is within the demonstration comparison limits.' },
   ];
   const critical = findings.some(f => f.critical);
-  const accepted = score >= 75 && !critical && !positionFaults.length && !techniqueFaults.length;
+  const accepted = score >= 75 && !critical && !positionFaults.length && !techniqueFaults.length && !collimationFaults.length;
   return { quality_score: Math.max(20, score), accepted, critical, verdict: accepted ? 'accepted' : 'repeat_required', findings,
     summary: `${p.label}: ${accepted ? 'scripted technical criteria met' : 'technical correction indicated'}. This is not diagnostic interpretation.`,
     recommendation: accepted ? 'No repeat suggested by this simulation. Radiographer must review the image before acceptance.' : `Review clinical adequacy before deciding to repeat. ${s.cutoff ? `Include ${p.cutoff}. ` : ''}${s.motion ? 'Reduce motion. ' : ''}${s.artifact ? 'Remove external artifact. ' : ''}${positionFaults.length ? 'Correct position and beam alignment. ' : ''}${techniqueFaults.length ? 'Review technique. ' : ''}` };

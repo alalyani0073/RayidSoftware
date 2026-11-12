@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { projectionByKey, projectionFor } from '@/lib/protocols';
 import useModalityWorklist from '@/hooks/useModalityWorklist';
-import { baselineTechnique, exposureTime, initialPosition, recommendedTechnique, positioningIssues, exposureIssues, sampleFor, scriptedAssessment } from '@/components/workstation/simulation';
+import { baselineTechnique, exposureTime, initialPosition, recommendedTechnique, positioningIssues, exposureIssues, collimationIssues, fieldSizeCm, sampleFor, scriptedAssessment } from '@/components/workstation/simulation';
 
 export default function useWorkstation({ rayidOn }) {
   const worklist = useModalityWorklist();
@@ -28,6 +28,8 @@ export default function useWorkstation({ rayidOn }) {
   const projection = useMemo(() => projectionFor(exam?.protocol_name), [exam?.protocol_name]);
   const plan = useMemo(() => rayidOn && exam ? recommendedTechnique(exam, projection) : null, [rayidOn, exam, projection]);
   const positionErrors = rayidOn ? positioningIssues(position, projection) : [];
+  const collimationErrors = rayidOn ? collimationIssues(position, projection) : [];
+  const collimationCm = fieldSizeCm(position, projection);
 
   useEffect(() => {
     if (!rayidOn) {
@@ -60,7 +62,7 @@ export default function useWorkstation({ rayidOn }) {
     const p = projectionFor(record.protocol_name);
     const saved = record.simulation_snapshot?.position ? record.simulation_snapshot : null;
     const values = saved?.technique || baselineTechnique(p);
-    setExam(record); setTechnique(values); setPosition(saved?.position || initialPosition(p));
+    setExam(record); setTechnique(values); setPosition(saved?.position ? { ...initialPosition(p), ...saved.position } : initialPosition(p));
     setCapture(saved ? { ...saved, patient: record } : null); setStage(saved ? 'review' : 'pre');
     setConfirmed(Boolean(saved)); setAssessment(null); setScenario('auto'); setAlert(null); setError('');
     setCenterResult(null); setCentering(false); setRecommendationStatus('available'); setCompletion('');
@@ -87,6 +89,15 @@ export default function useWorkstation({ rayidOn }) {
   function changePosition(key, value) {
     setPosition(current => ({ ...current, [key]: value })); setConfirmed(false); setCenterResult(null);
   }
+  function changeCollimation(key, value) {
+    setPosition(current => ({ ...current, collimation: { ...(current.collimation || projection.field), [key]: value } }));
+    setConfirmed(false);
+  }
+  function matchCollimation() {
+    if (!active.current) return;
+    setPosition(current => ({ ...current, collimation: { w: projection.field.w, h: projection.field.h } }));
+    setConfirmed(false); setCenterResult(null);
+  }
   function introduceError() {
     setPosition(current => ({ ...current, x: 25, y: -18, rotation: 7, angle: projection.angle + 5, limb: false }));
     setConfirmed(false); setCenterResult(null);
@@ -106,13 +117,15 @@ export default function useWorkstation({ rayidOn }) {
   }
   function applyCentering() {
     if (!active.current || !centerResult) return;
-    const next = { ...position, x: 0, y: 0, angle: centerResult.angle };
+    const next = { ...position, x: 0, y: 0, angle: centerResult.angle, collimation: { w: projection.field.w, h: projection.field.h } };
     setPosition(next); setCenterResult({ ...centerResult, applied: true }); setConfirmed(false);
     const remaining = positioningIssues(next, projection);
     if (remaining.length) setAlert({ kind: 'auto', lines: ['Beam centering was updated. Patient positioning still requires correction.', ...remaining] });
   }
   function confirmPosition() {
-    if (!active.current || !positionErrors.length) { setConfirmed(true); return; }
+    if (!active.current) { setConfirmed(true); return; }
+    if (collimationIssues(position, projection).length) { setAlert({ kind: 'collimation', lines: collimationIssues(position, projection), next: 'confirm' }); return; }
+    if (!positionErrors.length) { setConfirmed(true); return; }
     setAlert({ kind: 'position', lines: positionErrors });
   }
   function prepare() {
@@ -122,6 +135,8 @@ export default function useWorkstation({ rayidOn }) {
   }
   function requestExposure() {
     if (!confirmed || busy) return;
+    const field = active.current ? collimationIssues(position, projection) : [];
+    if (field.length) { setAlert({ kind: 'collimation', lines: field, next: 'expose' }); return; }
     const issues = active.current ? exposureIssues(technique, plan) : [];
     if (issues.length) setAlert({ kind: 'exposure', lines: issues, next: 'expose' });
     else acquire();
@@ -165,11 +180,19 @@ export default function useWorkstation({ rayidOn }) {
   function continueWarning() {
     const kind = alert?.kind; const next = alert?.next; setAlert(null);
     if (kind === 'position') setConfirmed(true);
+    if (kind === 'collimation') {
+      if (next === 'confirm') setConfirmed(true);
+      else {
+        const issues = active.current ? exposureIssues(technique, plan) : [];
+        if (issues.length) setAlert({ kind: 'exposure', lines: issues, next: 'expose' });
+        else acquire();
+      }
+    }
     if (kind === 'exposure') { if (next === 'prepare') setStage('positioning'); else acquire(); }
     if (kind === 'override') finish(true);
     if (kind === 'quality') setAlert({ kind: 'override', result: assessment });
   }
-  return { worklist, exam, projection, stage, rayidOn, technique, plan, position, positionErrors, confirmed, scenario, setScenario,
+  return { worklist, exam, projection, stage, rayidOn, technique, plan, position, positionErrors, collimationErrors, collimationCm, changeCollimation, matchCollimation, confirmed, scenario, setScenario,
     capture, assessment, evaluating, centering, centerResult, alert, setAlert, busy, error, recommendationStatus, setRecommendationStatus, completion,
     openExam, closeExam, chooseProjection, changeTechnique, applyRecommendations, changePosition, introduceError, autoCenter, applyCentering,
     confirmPosition, prepare, requestExposure, repeat, requestAccept, continueWarning };
