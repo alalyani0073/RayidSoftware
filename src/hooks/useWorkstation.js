@@ -22,6 +22,7 @@ export default function useWorkstation({ rayidOn }) {
   const [error, setError] = useState('');
   const [recommendationStatus, setRecommendationStatus] = useState('available');
   const [completion, setCompletion] = useState('');
+  const [simOpen, setSimOpen] = useState(false);
   const aiRun = useRef(0);
   const active = useRef(rayidOn);
   active.current = rayidOn;
@@ -55,7 +56,7 @@ export default function useWorkstation({ rayidOn }) {
 
   function closeExam() {
     aiRun.current++; setExam(null); setStage('pre'); setCapture(null); setAssessment(null);
-    setAlert(null); setCenterResult(null); setCentering(false); setEvaluating(false); setConfirmed(false); setError('');
+    setAlert(null); setCenterResult(null); setCentering(false); setEvaluating(false); setConfirmed(false); setError(''); setSimOpen(false);
   }
   function openExam(record) {
     aiRun.current++;
@@ -65,7 +66,7 @@ export default function useWorkstation({ rayidOn }) {
     setExam(record); setTechnique(values); setPosition(saved?.position ? { ...initialPosition(p), ...saved.position } : initialPosition(p));
     setCapture(saved ? { ...saved, patient: record } : null); setStage(saved ? 'review' : 'pre');
     setConfirmed(Boolean(saved)); setAssessment(null); setScenario('auto'); setAlert(null); setError('');
-    setCenterResult(null); setCentering(false); setRecommendationStatus('available'); setCompletion('');
+    setCenterResult(null); setCentering(false); setRecommendationStatus('available'); setCompletion(''); setSimOpen(false);
   }
   function chooseProjection(key) {
     if (busy || !exam || stage === 'review') return;
@@ -192,7 +193,7 @@ export default function useWorkstation({ rayidOn }) {
     if (kind === 'override') finish(true);
     if (kind === 'quality') setAlert({ kind: 'override', result: assessment });
   }
-  return { worklist, exam, projection, stage, rayidOn, technique, plan, position, positionErrors, collimationErrors, collimationCm, changeCollimation, matchCollimation, confirmed, scenario, setScenario,
+  return { worklist, exam, projection, stage, rayidOn, technique, plan, position, positionErrors, collimationErrors, collimationCm, changeCollimation, matchCollimation, confirmed, scenario, setScenario, simOpen, setSimOpen,
     capture, assessment, evaluating, centering, centerResult, alert, setAlert, busy, error, recommendationStatus, setRecommendationStatus, completion,
     openExam, closeExam, chooseProjection, changeTechnique, applyRecommendations, changePosition, introduceError, autoCenter, applyCentering,
     confirmPosition, prepare, requestExposure, repeat, requestAccept, continueWarning };

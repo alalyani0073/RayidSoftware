@@ -7,7 +7,7 @@ export default function CollimationControl({ ws }) {
   const widthCm = Math.round((c.w / p.field.w) * cmW);
   const heightCm = Math.round((c.h / p.field.h) * cmH);
   const toPercent = (value, axis) => (axis === 'w' ? (value / cmW) * p.field.w : (value / cmH) * p.field.h);
-  return <div id="collimation-controls" className="border-t border-border bg-ws-surface px-3 py-2">
+  return <div className="border-t border-border bg-ws-surface px-3 py-2">
     <div className="flex flex-wrap items-center justify-between gap-2">
       <h3 className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Camera collimation · field {ws.collimationCm.join(' × ')} cm
         {ws.collimationErrors.length > 0 && <span className="ml-1 text-chart-3">· outside required field</span>}

@@ -7,7 +7,11 @@ export default function WorkstationAlert({ ws }) {
   const lines = a.lines || a.result?.findings.filter(f => !f.pass).map(f => `${f.label}: ${f.note}`) || [];
   const dismiss = () => ws.setAlert(null);
   const targetId = a.kind === 'exposure' ? 'exposure-controls' : a.kind === 'collimation' ? 'collimation-controls' : 'positioning-controls';
-  const review = () => { dismiss(); requestAnimationFrame(() => document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth', block: 'center' })); };
+  const review = () => {
+    dismiss();
+    if (a.kind === 'position') { ws.setSimOpen(true); return; }
+    requestAnimationFrame(() => document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+  };
   const secondary = 'rounded-sm border border-border bg-secondary px-3 py-2 text-xs font-semibold';
   const primary = 'rounded-sm bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground';
   return <Dialog open onOpenChange={open => { if (!open && !ws.busy) dismiss(); }}><DialogContent className="max-h-[85vh] max-w-xl overflow-y-auto rounded-sm border-border bg-ws-surface">
