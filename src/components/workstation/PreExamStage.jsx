@@ -14,7 +14,12 @@ export default function PreExamStage({ ws }) {
       </div>
       <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted-foreground"><span>{p.detector}</span><span>Grid: {p.grid}</span><span>SID: {ws.technique.sid_cm} cm</span><span>Side: {ws.exam.laterality === 'not_applicable' ? 'Midline' : ws.exam.laterality}</span></div>
     </div>
-    <div className="min-h-0 flex-1 overflow-y-auto">{ws.rayidOn ? <><ProjectionReference ws={ws} referenceOnly /><PositionGuidelines projection={p} /></> : <WorkstationIdle patientSelected projection={p} />}</div>
+    {ws.rayidOn ? (
+      <div className="min-h-0 flex-1 overflow-y-auto lg:grid lg:grid-cols-[minmax(0,1fr)_270px] lg:overflow-hidden">
+        <ProjectionReference ws={ws} referenceOnly />
+        <div className="min-h-0 border-t border-border lg:overflow-y-auto lg:border-l lg:border-t-0"><PositionGuidelines projection={p} /></div>
+      </div>
+    ) : <div className="min-h-0 flex-1 overflow-y-auto"><WorkstationIdle patientSelected projection={p} /></div>}
     <div className="flex items-center justify-between gap-3 border-t border-border bg-ws-toolbar p-3"><span className="text-xs text-muted-foreground">Verify identity, projection and technique.</span><button onClick={ws.prepare} disabled={ws.busy} className="rounded-sm bg-secondary px-4 py-2 text-xs font-semibold text-foreground hover:bg-accent">CONFIRM TECHNIQUE / POSITION PATIENT</button></div>
   </div>;
 }

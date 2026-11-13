@@ -3,8 +3,8 @@ import { Search, Loader2, ChevronRight } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import StatusPill from '@/components/StatusPill';
 import ScoreRing from '@/components/ScoreRing';
-import { Image } from '@/components/ui/image';
-import { projectionFor } from '@/lib/protocols';
+import ImageFrame from '@/components/workstation/ImageFrame';
+import { projectionFor, radiographRatio } from '@/lib/protocols';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { formatDateTime, scoreTone, verdictOf } from '@/lib/rayid';
@@ -167,8 +167,15 @@ export default function History() {
               </div>
 
               {selected.simulation_snapshot && (
-                <div className="mt-3 flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.02] p-3">
-                  <Image src={projectionFor(selected.protocol_name).radiograph} alt={`Acquired image archived with the ${selected.protocol_name} record`} fittingType="fit" className="h-24 w-20 rounded-md border border-white/10 bg-black/40" />
+                <div className="mt-3 grid gap-3 rounded-xl border border-white/[0.07] bg-white/[0.02] p-3 sm:grid-cols-[minmax(0,250px)_minmax(0,1fr)]">
+                  <div className="h-[280px] sm:h-[340px]">
+                    <ImageFrame
+                      src={projectionFor(selected.protocol_name).radiograph}
+                      alt={`Acquired image archived with the ${selected.protocol_name} record`}
+                      ratio={radiographRatio(projectionFor(selected.protocol_name).key)}
+                      frameClassName="border-white/10 bg-black/60"
+                    />
+                  </div>
                   <div className="text-[11px] leading-relaxed text-slate-400">
                     <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-slate-500">Acquired image linked to this record</p>
                     <p className="mt-1">PACS transfer: <b className={selected.pacs_status === 'transferred' ? 'text-emerald-300' : 'text-amber-300'}>{selected.pacs_status === 'transferred' ? 'COMPLETED' : 'PENDING'}</b></p>

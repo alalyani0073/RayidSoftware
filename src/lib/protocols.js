@@ -88,6 +88,11 @@ export const projectionByKey = (key) => PROJECTIONS.find((item) => item.key === 
 
 export const referenceFor = (p, sex) => (sex === 'female' ? p.reference.female : p.reference.male);
 
+// Native pixel proportions of every stored radiograph, so the review view and
+// the archive display each image at its true shape.
+const RADIOGRAPH_RATIO = { knee_ap: '1067 / 1913', knee_lat: '1133 / 1939', chest_pa: '1929 / 2207', chest_ap: '2240 / 2262', abdomen_ap: '2043 / 2494' };
+export const radiographRatio = (key) => RADIOGRAPH_RATIO[key] || '4 / 5';
+
 export const projectionFor = (value) => {
   const raw = String(value || '').toLowerCase();
   return (
