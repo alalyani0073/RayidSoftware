@@ -15,7 +15,7 @@ export default function PreExamStage({ ws }) {
       <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted-foreground"><span>{p.detector}</span><span>Grid: {p.grid}</span><span>SID: {ws.technique.sid_cm} cm</span><span>Side: {ws.exam.laterality === 'not_applicable' ? 'Midline' : ws.exam.laterality}</span></div>
     </div>
     {ws.rayidOn ? (
-      <div className="min-h-0 flex-1 overflow-y-auto lg:grid lg:grid-cols-[minmax(0,1fr)_270px] lg:overflow-hidden">
+      <div className="min-h-0 flex-1 overflow-y-auto lg:grid lg:grid-cols-[minmax(0,1fr)_270px] lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden">
         <ProjectionReference ws={ws} referenceOnly />
         <div className="min-h-0 border-t border-border lg:overflow-y-auto lg:border-l lg:border-t-0"><PositionGuidelines projection={p} /></div>
       </div>
