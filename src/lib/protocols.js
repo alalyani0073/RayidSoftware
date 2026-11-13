@@ -21,6 +21,11 @@ const TIBIA_AP_REFERENCE = 'https://base44.app/api/apps/6af445986703f21f765252f1
 // receptor, hands on hips so the scapulae clear the lung fields.
 const CHEST_AP_REFERENCE = 'https://base44.app/api/apps/6af445986703f21f765252f1/files/mp/public/6af445986703f21f765252f1/8289f02ce_chest-ap.jpg';
 
+// Tube-mounted camera reference supplied for the AP pelvis projection, with the
+// collimation field and central ray already marked on the image: the supine
+// patient is viewed down the central ray, iliac crests to lesser trochanters.
+const PELVIS_AP_REFERENCE = 'https://base44.app/api/apps/6af445986703f21f765252f1/files/mp/public/6af445986703f21f765252f1/5e243a3bd_pelvis-ap.png';
+
 export const PROJECTIONS = [
   {
     key: 'chest_pa', name: 'Chest', view: 'PA', label: 'Chest — PA', region: 'Thorax', laterality: 'not_applicable',
@@ -157,9 +162,9 @@ export const PROJECTIONS = [
     default_kvp: 80, default_mas: 20, default_ma: 250, default_sid_cm: 100, grid: 'yes', aec: true,
     centring: 'Midline, about 5 cm above the pubic symphysis, at the level of the greater trochanters', cr: 'Vertical, perpendicular to the midline at the level of the symphysis and ASIS', angulation: '0°', angle: 0,
     tolerances: { rotation: 2, centring: 12, angle: 2 },
-    focus: { x: 0.5, y: 0.59 }, field: { l: 17, r: 83, t: 8, b: 92 }, field_cm: [35, 43],
+    focus: { x: 0.505, y: 0.285 }, field: { l: 17.5, r: 83.5, t: 8, b: 58.5 }, field_cm: [35, 43],
     borders: { t: 'iliac crests', b: 'lesser trochanters and proximal femora', l: 'left iliac wing', r: 'right iliac wing' },
-    reference: { male: `${M}03e82640b_generated_image.png`, female: `${M}03e82640b_generated_image.png` }, cameraDirection: 'Overhead tube → anterior pelvis → table Bucky',
+    reference: { male: PELVIS_AP_REFERENCE, female: PELVIS_AP_REFERENCE }, cameraDirection: 'Overhead tube → anterior pelvis → table Bucky',
     prep: PREP, positioning: ['Supine; pelvis level, both legs extended straight and slightly separated.', 'ASIS equidistant from the table; no rotation.', 'Centre about 5 cm above the pubic symphysis.', 'Include iliac crests to proximal femora.'],
     criteria: ['Iliac crests and both proximal femora included', 'Symmetric obturator foramina', 'Sacroiliac joints demonstrated', 'Pubic symphysis centred', 'Sharp trabecular detail of the pelvis'],
     limbLabel: 'Legs extended / pelvis level', rotationCriterion: 'Obturator foramina and iliac wings symmetric', cutoff: 'iliac crests',
