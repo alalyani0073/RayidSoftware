@@ -11,13 +11,13 @@ export default function ProjectionReference({ ws, referenceOnly = false }) {
   const editable = ws.rayidOn && !referenceOnly && !ws.centering && !ws.busy;
   const [cmW, cmH] = p.field_cm;
   const horizontal = p.cr.startsWith('Horizontal');
-  const patientView = p.key === 'chest_pa' ? '(back toward tube)' : horizontal ? '(side toward tube)' : '(table)';
+  const patientView = `(${p.patientView})`;
   const Arrow = horizontal ? ArrowRight : ArrowDown;
   return <section className={`flex min-h-0 min-w-0 flex-1 flex-col bg-ws-surface ${referenceOnly ? 'min-h-[46vh] lg:min-h-0' : ''}`}>
     <div className="flex items-center gap-2 border-b border-border bg-ws-toolbar px-3 py-1 text-[10px] text-muted-foreground">
-      <strong className={`font-mono ${ws.rayidOn ? 'text-rayid' : 'text-foreground'}`}>TUBE-MOUNTED CAMERA · {p.label}</strong>
+      <strong className={`whitespace-nowrap font-mono ${ws.rayidOn ? 'text-rayid' : 'text-foreground'}`}>TUBE VIEW · {p.label}</strong>
       <span className="hidden items-center gap-1.5 lg:inline-flex"><Camera className="h-3 w-3 text-primary" /><Arrow className="h-3 w-3" />Patient {patientView}<Arrow className="h-3 w-3" />Receptor</span>
-      <span className="ml-auto uppercase tracking-wide">{horizontal ? 'Horizontal beam' : 'Overhead beam'} · {p.default_sid_cm} cm SID</span>
+      <span className="ml-auto whitespace-nowrap uppercase tracking-wide">{p.support} · {p.default_sid_cm} cm SID</span>
     </div>
     <div id="collimation-controls" className="relative min-h-[300px] min-w-0 flex-1 overflow-hidden bg-ws-canvas lg:min-h-[160px]">
       <CameraImage
