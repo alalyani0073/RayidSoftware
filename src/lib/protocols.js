@@ -102,7 +102,7 @@ export const PROJECTIONS = [
     default_kvp: 70, default_mas: 6, default_ma: 200, default_sid_cm: 100, grid: 'no', aec: false,
     centring: '1 inch (2.5 cm) inferior to the coracoid process', cr: 'Horizontal, perpendicular to the coracoid; 0° for the true AP projection',
     angulation: '0°; 15–20° caudal only if the patient cannot rotate', angle: 0, tolerances: { rotation: 3, centring: 10, angle: 2 },
-    focus: { x: 0.5, y: 0.3 }, field: { l: 26, r: 74, t: 14, b: 78 }, field_cm: [18, 24],
+    focus: { x: 0.37, y: 0.4 }, field: { l: 24, r: 50, t: 26, b: 66 }, field_cm: [18, 24],
     borders: { t: 'soft-tissue margin above the acromion', b: 'proximal humeral diaphysis', l: 'medial soft-tissue margin at the glenohumeral joint', r: 'lateral soft-tissue margin, including the greater tuberosity' },
     reference: { male: `${M}41b0e92b0_generated_image.png`, female: `${M}41b0e92b0_generated_image.png` }, cameraDirection: 'Horizontal tube → anterior shoulder → upright Bucky',
     prep: PREP, positioning: ['Erect at the upright Bucky, facing the receptor; no tabletop exposure.', 'Affected arm alongside the body, elbow extended, palm supinated.', 'Shoulder at the same height as the receptor, no patient rotation.', 'Centre the coracoid process, 2.5 cm below the AC joint; include the AC joint to proximal humerus.'],
