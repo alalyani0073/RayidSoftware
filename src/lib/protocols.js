@@ -26,6 +26,11 @@ const CHEST_AP_REFERENCE = 'https://base44.app/api/apps/6af445986703f21f765252f1
 // patient is viewed down the central ray, iliac crests to lesser trochanters.
 const PELVIS_AP_REFERENCE = 'https://base44.app/api/apps/6af445986703f21f765252f1/files/mp/public/6af445986703f21f765252f1/5e243a3bd_pelvis-ap.png';
 
+// Tube-mounted camera reference supplied for the AP ankle projection, with the
+// collimator light field and the laser central ray marked on the image: the
+// foot is dorsiflexed to a right angle, malleoli equidistant from the receptor.
+const ANKLE_AP_REFERENCE = 'https://base44.app/api/apps/6af445986703f21f765252f1/files/mp/public/6af445986703f21f765252f1/c3a24438a_ankle-ap.png';
+
 export const PROJECTIONS = [
   {
     key: 'chest_pa', name: 'Chest', view: 'PA', label: 'Chest — PA', region: 'Thorax', laterality: 'not_applicable',
@@ -249,9 +254,9 @@ export const PROJECTIONS = [
     default_kvp: 60, default_mas: 3.2, default_ma: 200, default_sid_cm: 100, grid: 'no', aec: false,
     centring: 'Midway between the medial and lateral malleoli', cr: 'Perpendicular to the ankle joint, midway between the malleoli',
     angulation: '0°; 5° cephalad for the mortise view', angle: 0, tolerances: { rotation: 2, centring: 8, angle: 2 },
-    focus: { x: 0.5, y: 0.5 }, field: { l: 30, r: 70, t: 14, b: 92 }, field_cm: [15, 18],
+    focus: { x: 0.495, y: 0.505 }, field: { l: 28.3, r: 70.7, t: 17.8, b: 88.5 }, field_cm: [15, 18],
     borders: { t: 'distal tibiofibular joint', b: 'proximal talus and metatarsal bases', l: 'medial malleolus', r: 'lateral malleolus' },
-    reference: { male: `${M}95855222c_generated_image.png`, female: `${M}95855222c_generated_image.png` }, cameraDirection: 'Overhead tube → anterior ankle → tabletop receptor',
+    reference: { male: ANKLE_AP_REFERENCE, female: ANKLE_AP_REFERENCE }, cameraDirection: 'Overhead tube → anterior ankle → tabletop receptor',
     prep: PREP, positioning: ['Supine with the knee flexed, foot flat on the cassette; foot dorsiflexed to a right angle.', 'No rotation of the leg; malleoli equidistant from the receptor.', 'Centre midway between the malleoli.', 'Include distal tibia and fibula, talus and proximal metatarsals.'],
     criteria: ['Both malleoli included', 'Ankle mortise demonstrated', 'Distal tibiofibular joint visible', 'Proximal talus and metatarsal bases included', 'Sharp joint space'],
     limbLabel: 'Foot dorsiflexed to 90° / no rotation', rotationCriterion: 'Malleoli equidistant from the receptor', cutoff: 'lateral malleolus',
