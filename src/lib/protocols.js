@@ -42,6 +42,10 @@ const CHEST_PA_REFERENCE = 'https://base44.app/api/apps/6af445986703f21f765252f1
 // Tube-mounted camera reference supplied for the lateral knee projection: the
 // affected side is toward the upright receptor, knee flexed, the joint seen in
 // profile down the horizontal central ray.
+// Tube-mounted camera reference supplied for the AP abdomen projection: the
+// supine patient viewed down the vertical central ray, xiphoid to symphysis.
+const ABDOMEN_AP_REFERENCE = 'https://base44.app/api/apps/6af445986703f21f765252f1/files/mp/public/6af445986703f21f765252f1/45cad880e_abdomen-ap.jpg';
+
 const KNEE_LAT_REFERENCE = 'https://base44.app/api/apps/6af445986703f21f765252f1/files/mp/public/6af445986703f21f765252f1/431096365_knee-lateral.png';
 
 const KNEE_AP_REFERENCE = 'https://base44.app/api/apps/6af445986703f21f765252f1/files/mp/public/6af445986703f21f765252f1/338f04360_knee-ap.png';
@@ -83,9 +87,9 @@ export const PROJECTIONS = [
     default_kvp: 78, default_mas: 25, default_ma: 250, default_sid_cm: 100, grid: 'yes', aec: true,
     centring: 'Midline at the level of the iliac crests (L4)', cr: 'Vertical, anterior to posterior; perpendicular to the receptor',
     angulation: '0°', angle: 0, tolerances: { rotation: 3, centring: 15, angle: 2 },
-    focus: { x: 0.5, y: 0.58 }, field: { l: 18, r: 82, t: 5, b: 91 }, field_cm: [35, 43],
+    focus: { x: 0.5, y: 0.612 }, field: { l: 24, r: 76, t: 19, b: 82 }, field_cm: [35, 43],
     borders: { t: 'diaphragmatic domes', b: 'pubic symphysis and inferior pelvis', l: 'left lateral abdominal wall', r: 'right lateral abdominal wall' },
-    reference: { male: `${M}afe8b4a60_generated_image.png`, female: `${M}b24139bde_generated_image.png` }, cameraDirection: 'Overhead tube → anterior abdomen → table receptor',
+    reference: { male: ABDOMEN_AP_REFERENCE, female: `${M}b24139bde_generated_image.png` }, cameraDirection: 'Overhead tube → anterior abdomen → table receptor',
     prep: PREP, positioning: ['Supine on the table; shoulders and hips equidistant from the table.', 'Arms raised clear of the abdomen; legs extended and together.', 'Centre at iliac-crest level, midsagittal plane.', 'Include lateral abdominal walls and pubic symphysis; diaphragm if possible.', 'Expose on suspended expiration.'],
     criteria: ['Required abdominal and pelvic coverage', 'Symmetric iliac crests and obturator foramina', 'Psoas margins / bowel detail demonstrated', 'No respiratory motion blur', 'No external artifact over required anatomy'],
     limbLabel: 'Arms raised / hips level', rotationCriterion: 'Iliac crests and obturator foramina symmetric', cutoff: 'pubic symphysis',
