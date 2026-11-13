@@ -2,11 +2,13 @@ import { collimationFindings, centeringOffset } from '@/components/workstation/s
 
 // Guidance sits below the camera pane, never on top of the patient image, so the
 // anatomy, collimation field and centering markers stay fully unobstructed.
-export default function PositioningTips({ projection, position, recommendation, busy, editable }) {
+export default function PositioningTips({ projection, position, recommendation, busy, editable, adjusted }) {
   const hints = [];
   if (busy) hints.push('Locating anatomical landmark…');
-  collimationFindings(position, projection).slice(0, 2).forEach((finding) => hints.push(finding.message));
-  if (centeringOffset(position, projection)) hints.push(`Central ray ${Math.abs(position.x)} mm ${position.x >= 0 ? 'lateral' : 'medial'} of ${projection.centring}`);
+  if (adjusted) {
+    collimationFindings(position, projection).slice(0, 2).forEach((finding) => hints.push(finding.message));
+    if (centeringOffset(position, projection)) hints.push(`Central ray ${Math.abs(position.x)} mm ${position.x >= 0 ? 'lateral' : 'medial'} of ${projection.centring}`);
+  }
   if (!position.visible) hints.push('Landmark obscured; centering guidance withheld.');
   if (position.visible && recommendation) hints.push(`Green: recommended landmark · ${projection.centring}`);
   if (editable) hints.push('Drag the crosshair to set centering', 'Drag any of the four shutter edges');

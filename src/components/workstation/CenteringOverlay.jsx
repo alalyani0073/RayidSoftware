@@ -2,7 +2,7 @@ import { collimation, requiredEdges } from '@/components/workstation/simulation'
 
 const shade = 'hsl(var(--ws-canvas) / 0.3)';
 
-export default function CenteringOverlay({ projection, position, recommendation, busy, onCollimate, onCentre }) {
+export default function CenteringOverlay({ projection, position, recommendation, required = true, busy, onCollimate, onCentre }) {
   const x = projection.focus.x * 100;
   const y = projection.focus.y * 100;
   const cx = x + position.x * 0.22;
@@ -84,11 +84,11 @@ export default function CenteringOverlay({ projection, position, recommendation,
       <rect x="0" y={c.b} width="100" height={100 - c.b} fill={shade} />
       <rect x="0" y={c.t} width={c.l} height={fh} fill={shade} />
       <rect x={c.r} y={c.t} width={100 - c.r} height={fh} fill={shade} />
-      <rect x={req.l} y={req.t} width={req.r - req.l} height={req.b - req.t} fill="none" stroke="currentColor" strokeWidth="0.3" strokeDasharray="2 1.4" opacity="0.75" />
+      {required && <rect x={req.l} y={req.t} width={req.r - req.l} height={req.b - req.t} fill="none" stroke="currentColor" strokeWidth="0.3" strokeDasharray="2 1.4" opacity="0.75" />}
       <rect x={c.l} y={c.t} width={fw} height={fh} fill="none" stroke="currentColor" strokeWidth="0.55" />
       <path d={`M ${cx} ${c.t} V ${c.b} M ${c.l} ${cy} H ${c.r}`} stroke="currentColor" strokeWidth="0.15" opacity="0.5" />
       <g className="text-chart-3"><circle cx={cx} cy={cy} r="1.8" fill="none" stroke="currentColor" strokeWidth="0.5" /></g>
-      {position.visible && recommendation && <g className="text-chart-2"><path d={`M ${cx} ${cy} L ${x} ${y}`} stroke="currentColor" strokeWidth="0.6" /><circle cx={x} cy={y} r="3" fill="none" stroke="currentColor" strokeWidth="0.6" /><path d={`M ${x - 5} ${y} H ${x + 5} M ${x} ${y - 5} V ${y + 5}`} stroke="currentColor" strokeWidth="0.4" /></g>}
+      {required && position.visible && recommendation && <g className="text-chart-2"><path d={`M ${cx} ${cy} L ${x} ${y}`} stroke="currentColor" strokeWidth="0.6" /><circle cx={x} cy={y} r="3" fill="none" stroke="currentColor" strokeWidth="0.6" /><path d={`M ${x - 5} ${y} H ${x + 5} M ${x} ${y - 5} V ${y + 5}`} stroke="currentColor" strokeWidth="0.4" /></g>}
     </svg>
     {draggable && ['t', 'b', 'l', 'r'].map(grip)}
     <div

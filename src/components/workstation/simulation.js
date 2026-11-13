@@ -97,18 +97,19 @@ export function collimationFindings(s, p) {
       findings.push({ edge, kind: 'tight', cm, message: `${EDGE_LABEL[edge]} border is ${cm} cm inside the required field and excludes the ${anatomy(edge)}. Open the ${EDGE_LABEL[edge].toLowerCase()} shutter by ${cm} cm to include all required anatomy.` });
     }
   });
-  const beam = centrePercent(p, s);
-  const fieldCentre = { x: (c.l + c.r) / 2, y: (c.t + c.b) / 2 };
-  const offX = Math.round((fieldCentre.x - beam.x) * k.x);
-  const offY = Math.round((fieldCentre.y - beam.y) * k.y);
-  if (Math.abs(offX) > TOLERANCE_CM || Math.abs(offY) > TOLERANCE_CM) {
-    const direction = [
-      Math.abs(offX) > TOLERANCE_CM ? `${Math.abs(offX)} cm ${offX >= 0 ? 'right' : 'left'}` : '',
-      Math.abs(offY) > TOLERANCE_CM ? `${Math.abs(offY)} cm ${offY >= 0 ? 'inferior' : 'superior'}` : '',
-    ].filter(Boolean).join(' and ');
-    findings.push({ edge: offX ? (offX > 0 ? 'l' : 'r') : (offY > 0 ? 't' : 'b'), kind: 'asymmetric', cm: Math.max(Math.abs(offX), Math.abs(offY)),
-      message: `The shutters are unbalanced: the field is displaced ${direction} of the central ray and no longer covers the ${p.centring}. Rebalance the shutters until the field is centred on the required landmark.` });
-  }
+  // Unbalanced shutters: one border is opened beyond the required field while the
+  // opposite border falls short of it, so the field has drifted off the anatomy.
+  const delta = { l: req.l - c.l, r: c.r - req.r, t: req.t - c.t, b: c.b - req.b };
+  [['l', 'r', tolX, k.x], ['t', 'b', tolY, k.y]].forEach(([first, second, limit, scale]) => {
+    const wide = (edge) => delta[edge] > limit;
+    const short = (edge) => delta[edge] < -limit;
+    if (!((wide(first) && short(second)) || (short(first) && wide(second)))) return;
+    const wideEdge = wide(first) ? first : second;
+    const shortEdge = wideEdge === first ? second : first;
+    const cm = Math.max(1, Math.round((Math.abs(delta[first]) + Math.abs(delta[second])) / 2 * scale));
+    findings.push({ edge: shortEdge, kind: 'asymmetric', cm,
+      message: `The shutters are unbalanced for ${p.label}: the ${EDGE_LABEL[wideEdge].toLowerCase()} border extends beyond the required field while the ${EDGE_LABEL[shortEdge].toLowerCase()} border falls inside it. Rebalance the pair so the field is centred on the required landmark.` });
+  });
   return findings;
 }
 
@@ -168,6 +169,25 @@ export function sampleFor(position, scenario, p) {
     alignment: positioningIssues(position, p).length > 0 };
 }
 
+// Patient alignment as the operator last checked it: movement is any change to
+// these values after that check, not a change of the beam or shutters.
+export const alignmentSignature = (s) => [s.rotation, s.angle, s.flexion ?? 0, s.limb, s.visible, s.coverage, s.breathing].map(String).join('|');
+
+export function movementLines(position, checked, p) {
+  const moved = [];
+  if (position.rotation !== checked.rotation) moved.push(`patient rotation ${checked.rotation}° → ${position.rotation}°`);
+  if (position.angle !== checked.angle) moved.push(`tube angulation ${checked.angle}° → ${position.angle}°`);
+  if ((position.flexion ?? 0) !== (checked.flexion ?? 0)) moved.push(`limb flexion ${checked.flexion ?? 0}° → ${position.flexion ?? 0}°`);
+  if (position.limb !== checked.limb) moved.push(position.limb ? 'limb alignment restored' : `${p.limbLabel.toLowerCase()} lost`);
+  if (position.coverage !== checked.coverage) moved.push(position.coverage ? 'required anatomy back inside the field' : 'required anatomy outside the field');
+  if (position.breathing !== checked.breathing) moved.push(position.breathing ? 'breath hold resumed' : 'breath hold released');
+  if (position.visible !== checked.visible) moved.push(position.visible ? 'landmark visible again' : 'anatomical landmark now obscured');
+  return [
+    `The patient's position has changed since it was last checked: ${moved.join(', ')}.`,
+    `The patient has moved from the checked position for ${p.label}, so the centring point and collimation field no longer match the anatomy. Reassess patient alignment, centering and collimation before exposure.`,
+  ];
+}
+
 export function scriptedAssessment(capture, p) {
   const s = capture.sample;
   const pos = capture.position;
@@ -192,7 +212,29 @@ export function scriptedAssessment(capture, p) {
   if (s.artifact) detected.push({ title: 'External radiopaque artifact', detail: 'An object overlies the required anatomy and obscures detail.' });
   if (angulationWrong) detected.push({ title: 'Incorrect tube angulation', detail: `Selected ${pos.angle}°; recommended ${p.angulation}.` });
   if (techniqueFaults.length) detected.push({ title: 'Exposure selection outside range', detail: techniqueFaults.join(' ') });
-  const score = detected.length === 0 ? 94 : Math.round(capture.caseScore || Math.max(45, 92 - detected.length * 9));
+  // The score is measured from the exposure actually acquired: coverage, field
+  // accuracy, centering, rotation, angulation and technique deviation each cost
+  // quality, so any operator adjustment to centering, collimation or exposure
+  // moves the score in proportion to its clinical impact.
+  const shiftExcess = Math.max(0, Math.hypot(pos.x, pos.y) - p.tolerances.centring);
+  const rotExcess = Math.max(0, Math.abs(pos.rotation) - p.tolerances.rotation);
+  const angleExcess = Math.max(0, Math.abs(pos.angle - p.angle) - p.tolerances.angle);
+  const ref = recommendedTechnique(capture.patient, p);
+  // Technique only costs quality once it leaves the accepted range, so the
+  // recommended range keeps its score while a real deviation reduces it.
+  const techDev = Math.max(
+    Math.max(0, Math.abs(capture.technique.kvp - ref.kvp) - 10) / ref.kvp,
+    Math.max(0, Math.abs(capture.technique.mas - ref.mas) / ref.mas - 0.3),
+    Math.max(0, Math.abs(capture.technique.ma - ref.ma) / ref.ma - 0.35),
+  );
+  const cmOff = wide.reduce((n, f) => n + f.cm, 0) * 1.1 + tight.reduce((n, f) => n + f.cm, 0) * 1.5 + asym.reduce((n, f) => n + f.cm, 0) * 0.9;
+  const penalty = (s.cutoff ? 30 : 0) + (motion ? 24 : 0) + (s.artifact ? 22 : 0)
+    + Math.min(16, Math.round(cmOff))
+    + Math.min(14, Math.round(shiftExcess / 2) + (off ? 3 : 0))
+    + Math.min(12, Math.round(rotExcess * 2))
+    + Math.min(8, Math.round(angleExcess * 2))
+    + Math.min(24, Math.round(12 * Math.log2(1 + techDev)));
+  const score = Math.max(35, Math.min(98, 100 - penalty));
   const critical = Boolean(s.cutoff || s.motion || s.artifact);
   const accepted = score >= 90 && detected.length === 0 && !critical;
   const fixes = [];

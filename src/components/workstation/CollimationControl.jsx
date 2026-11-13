@@ -14,7 +14,7 @@ export default function CollimationControl({ ws }) {
   return <div className="border-t border-border bg-ws-surface px-2.5 py-2">
     <div className="flex flex-wrap items-center justify-between gap-2">
       <h3 className="font-mono text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">Collimation · {ws.collimationCm.join(' × ')} cm · req. {cmW} × {cmH} cm
-        {ws.collimationErrors.length > 0 && <span className="ml-1 text-rayid">· outside required field</span>}
+        {ws.adjusted && ws.collimationErrors.length > 0 && <span className="ml-1 text-rayid">· outside required field</span>}
       </h3>
       <button onClick={ws.matchCollimation} disabled={ws.busy || ws.centering} className="rounded-sm border border-border px-2 py-0.5 text-[10px] font-semibold text-rayid disabled:opacity-50">MATCH {cmW} × {cmH} cm</button>
     </div>

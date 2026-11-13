@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { projectionByKey, projectionFor } from '@/lib/protocols';
 import useModalityWorklist from '@/hooks/useModalityWorklist';
 import { caseFor, casePosition } from '@/components/workstation/simCases';
-import { baselineTechnique, exposureTime, initialPosition, recommendedTechnique, positioningIssues, exposureIssues, collimationIssues, centeringOffset, fieldSizeCm, sampleFor, scriptedAssessment, collimation, borderCm, setBorderCm, requiredEdges, EDGES } from '@/components/workstation/simulation';
+import { baselineTechnique, exposureTime, initialPosition, recommendedTechnique, positioningIssues, exposureIssues, collimationIssues, centeringOffset, fieldSizeCm, sampleFor, scriptedAssessment, collimation, borderCm, setBorderCm, requiredEdges, EDGES, alignmentSignature, movementLines } from '@/components/workstation/simulation';
 
 export default function useWorkstation({ rayidOn }) {
   const worklist = useModalityWorklist();
@@ -25,7 +25,10 @@ export default function useWorkstation({ rayidOn }) {
   const [recommendationStatus, setRecommendationStatus] = useState('available');
   const [completion, setCompletion] = useState('');
   const [simOpen, setSimOpen] = useState(false);
+  const [adjusted, setAdjusted] = useState(false);
   const warned = useRef('');
+  const checkedPosition = useRef(null);
+  const movementWarned = useRef('');
   const aiRun = useRef(0);
   const active = useRef(rayidOn);
   active.current = rayidOn;
@@ -35,6 +38,13 @@ export default function useWorkstation({ rayidOn }) {
   const collimationErrors = rayidOn ? collimationIssues(position, projection) : [];
   const collimationCm = fieldSizeCm(position, projection);
   const collimationBorders = useMemo(() => EDGES.reduce((acc, edge) => ({ ...acc, [edge]: borderCm(position, projection, edge) }), {}), [position, projection]);
+
+  // The alignment the radiographer last verified, so a later change of the
+  // patient's position is reported as movement rather than a fresh setup.
+  function rememberAlignment(next) {
+    checkedPosition.current = { rotation: next.rotation, angle: next.angle, flexion: next.flexion ?? 0, limb: next.limb, visible: next.visible, coverage: next.coverage, breathing: next.breathing };
+    movementWarned.current = '';
+  }
 
   useEffect(() => {
     if (!rayidOn) {
@@ -59,11 +69,17 @@ export default function useWorkstation({ rayidOn }) {
   }, [rayidOn, capture, projection]);
 
   // RAYID watches operator changes to centering and collimation and raises a warning
-  // once the adjustment settles outside the recommended anatomical criteria.
+  // only when the operator's own adjustment settles outside the required field, so
+  // the recommended default setup never produces a warning on load.
   useEffect(() => {
-    if (!rayidOn || stage !== 'positioning' || capture || alert) return;
+    if (!rayidOn || stage !== 'positioning' || capture) return;
     const target = collimationErrors.length ? 'collimation' : centeringOffset(position, projection) ? 'centering' : '';
-    if (!target) { warned.current = ''; return; }
+    if (!target) {
+      warned.current = '';
+      setAlert(current => (current && (current.kind === 'collimation' || current.kind === 'centering') ? null : current));
+      return;
+    }
+    if (!adjusted || alert) return;
     const edges = collimation(position, projection);
     const signature = `${target}:${position.x}:${position.y}:${edges.l}:${edges.r}:${edges.t}:${edges.b}`;
     if (warned.current === signature) return;
@@ -74,10 +90,26 @@ export default function useWorkstation({ rayidOn }) {
       else setAlert({ kind: 'centering', next: 'confirm', lines: centeringLines() });
     }, 1400);
     return () => clearTimeout(timer);
-  }, [rayidOn, stage, capture, alert, collimationErrors.length, position, projection]);
+  }, [rayidOn, stage, capture, alert, adjusted, collimationErrors.length, position, projection]);
+
+  // Patient movement: any change of the patient's alignment after the position was
+  // last checked is reported, so it is reassessed before the exposure.
+  useEffect(() => {
+    if (!rayidOn || stage !== 'positioning' || capture || alert) return;
+    if (!checkedPosition.current) { rememberAlignment(position); return; }
+    const signature = alignmentSignature(position);
+    if (signature === alignmentSignature(checkedPosition.current) || movementWarned.current === signature) return;
+    const timer = setTimeout(() => {
+      if (!active.current) return;
+      movementWarned.current = signature;
+      setAlert({ kind: 'movement', lines: movementLines(position, checkedPosition.current, projection) });
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [rayidOn, stage, capture, alert, position, projection]);
 
   function closeExam() {
-    aiRun.current++; warned.current = ''; setExam(null); setStage('pre'); setCapture(null); setAssessment(null);
+    aiRun.current++; warned.current = ''; checkedPosition.current = null; movementWarned.current = ''; setAdjusted(false);
+    setExam(null); setStage('pre'); setCapture(null); setAssessment(null);
     setAlert(null); setCenterResult(null); setCentering(false); setEvaluating(false); setConfirmed(false); setError(''); setSimOpen(false);
   }
   function openExam(record) {
@@ -87,7 +119,8 @@ export default function useWorkstation({ rayidOn }) {
     const saved = record.simulation_snapshot?.position ? record.simulation_snapshot : null;
     const values = saved?.technique || baselineTechnique(p);
     setExam(record); setSimCase(assigned); setTechnique(values);
-    setPosition(saved?.position ? { ...initialPosition(p), ...saved.position } : casePosition(p, assigned.fault));
+    const startingPosition = saved?.position ? { ...initialPosition(p), ...saved.position } : casePosition(p, assigned.fault);
+    setPosition(startingPosition); rememberAlignment(startingPosition); setAdjusted(false);
     setScenario(assigned.scenario);
     setCapture(saved ? { ...saved, patient: record, caseScore: assigned.score, caseFault: assigned.fault, caseLabel: assigned.label } : null);
     setStage(saved ? 'review' : 'pre');
@@ -101,7 +134,8 @@ export default function useWorkstation({ rayidOn }) {
     const side = next.laterality === 'not_applicable' ? 'not_applicable' : (projection.region === next.region && ['left', 'right'].includes(exam.laterality) ? exam.laterality : next.laterality);
     warned.current = '';
     setExam({ ...exam, protocol_name: next.label, body_part: next.region, laterality: side });
-    setTechnique(baselineTechnique(next)); setPosition(casePosition(next, simCase.fault)); setStage('pre');
+    const nextPosition = casePosition(next, simCase.fault);
+    setTechnique(baselineTechnique(next)); setPosition(nextPosition); rememberAlignment(nextPosition); setAdjusted(false); setStage('pre');
     setConfirmed(false); setCapture(null); setAssessment(null); setCenterResult(null); setCentering(false);
     setAlert(null); setScenario(simCase.scenario); setRecommendationStatus('available');
   }
@@ -119,7 +153,7 @@ export default function useWorkstation({ rayidOn }) {
   }
   function changeCollimation(edge, percent) {
     setPosition(current => ({ ...current, collimation: { ...collimation(current, projection), [edge]: percent } }));
-    setConfirmed(false);
+    setAdjusted(true); setConfirmed(false);
   }
   // Pointer drag on the camera view stores the chosen central ray position as
   // beam offsets in millimetres around the projection's recommended landmark.
@@ -136,16 +170,16 @@ export default function useWorkstation({ rayidOn }) {
       const shift = (value, delta) => Math.round(Math.min(98, Math.max(2, value + delta)) * 10) / 10;
       return { ...current, x, y, collimation: { l: shift(edges.l, dx), r: shift(edges.r, dx), t: shift(edges.t, dy), b: shift(edges.b, dy) } };
     });
-    setConfirmed(false); setCenterResult(null);
+    setAdjusted(true); setConfirmed(false); setCenterResult(null);
   }
   function setCollimationBorder(edge, cm) {
     setPosition(current => ({ ...current, collimation: setBorderCm(current, projection, edge, cm) }));
-    setConfirmed(false); setCenterResult(null);
+    setAdjusted(true); setConfirmed(false); setCenterResult(null);
   }
   function matchCollimation() {
     if (!active.current) return;
     setPosition(current => ({ ...current, collimation: { ...requiredEdges(projection) } }));
-    setConfirmed(false); setCenterResult(null);
+    setAdjusted(true); setConfirmed(false); setCenterResult(null);
   }
   function introduceError() {
     setPosition(current => ({ ...current, x: 25, y: -18, rotation: 7, angle: projection.angle + 5, limb: false }));
@@ -167,9 +201,12 @@ export default function useWorkstation({ rayidOn }) {
   function applyCentering() {
     if (!active.current || !centerResult) return;
     const next = { ...position, x: 0, y: 0, angle: centerResult.angle };
-    setPosition(next); setCenterResult({ ...centerResult, applied: true }); setConfirmed(false);
+    setPosition(next); rememberAlignment(next); setCenterResult({ ...centerResult, applied: true }); setConfirmed(false);
     const remaining = positioningIssues(next, projection);
     if (remaining.length) setAlert({ kind: 'auto', lines: ['Beam centering was updated. Patient positioning still requires correction.', ...remaining] });
+  }
+  function acknowledgeMovement() {
+    setAlert(null); rememberAlignment(position); setConfirmed(false); setSimOpen(true);
   }
   function centeringLines() {
     return [
@@ -185,19 +222,19 @@ export default function useWorkstation({ rayidOn }) {
     if (!active.current) { setConfirmed(true); return; }
     if (collimationErrors.length) { setAlert({ kind: 'collimation', lines: collimationErrors, next: 'confirm' }); return; }
     if (centeringOffset(position, projection)) { centeringWarning(); return; }
-    if (!positionErrors.length) { setConfirmed(true); return; }
+    if (!positionErrors.length) { rememberAlignment(position); setConfirmed(true); return; }
     setAlert({ kind: 'position', lines: positionErrors });
   }
   function correctCentering() {
     const next = { ...position, x: 0, y: 0 };
-    setPosition(next); setCenterResult({ dx: 0, dy: 0, angle: projection.angle, applied: true }); setAlert(null);
+    setPosition(next); rememberAlignment(next); setCenterResult({ dx: 0, dy: 0, angle: projection.angle, applied: true }); setAlert(null);
     const remaining = positioningIssues(next, projection);
     if (remaining.length) setAlert({ kind: 'position', lines: remaining });
     else setConfirmed(true);
   }
   function correctCollimation() {
     const next = { ...position, collimation: { ...requiredEdges(projection) } };
-    setPosition(next); setAlert(null);
+    setPosition(next); rememberAlignment(next); setAlert(null);
     if (centeringOffset(next, projection)) centeringWarning();
     else setConfirmed(true);
   }
@@ -233,7 +270,7 @@ export default function useWorkstation({ rayidOn }) {
   function repeat() {
     setStage('positioning'); setCapture(null); setAssessment(null); setAlert(null); setConfirmed(false);
     setCenterResult(null); setScenario(simCase.scenario); setError('');
-    warned.current = '';
+    warned.current = ''; checkedPosition.current = null; movementWarned.current = ''; setAdjusted(false);
   }
   function requestAccept() {
     if (busy || (active.current && evaluating) || !capture) return;
@@ -257,6 +294,7 @@ export default function useWorkstation({ rayidOn }) {
   function continueWarning() {
     const kind = alert?.kind; const next = alert?.next; setAlert(null);
     if (kind === 'position') setConfirmed(true);
+    if (kind === 'movement') { rememberAlignment(position); setConfirmed(false); }
     if (kind === 'centering') {
       if (next === 'expose') {
         const issues = active.current ? exposureIssues(technique, plan) : [];
@@ -279,5 +317,5 @@ export default function useWorkstation({ rayidOn }) {
   return { worklist, exam, projection, simCase, stage, rayidOn, technique, plan, position, positionErrors, collimationErrors, collimationCm, collimationBorders, changeCollimation, setCollimationBorder, matchCollimation, confirmed, scenario, setScenario, simOpen, setSimOpen,
     capture, assessment, evaluating, centering, centerResult, alert, setAlert, busy, error, recommendationStatus, setRecommendationStatus, completion,
     openExam, closeExam, chooseProjection, changeTechnique, applyRecommendations, changePosition, moveCentring, introduceError, autoCenter, applyCentering,
-    confirmPosition, correctCentering, correctCollimation, prepare, requestExposure, repeat, requestAccept, continueWarning };
+    adjusted, acknowledgeMovement, confirmPosition, correctCentering, correctCollimation, prepare, requestExposure, repeat, requestAccept, continueWarning };
 }

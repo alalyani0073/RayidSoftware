@@ -4,6 +4,7 @@ import { Monitor, Wifi } from 'lucide-react';
 import { Image } from '@/components/ui/image';
 import { cn } from '@/lib/utils';
 const NAV = [{ to: '/', label: 'Acquisition', end: true }, { to: '/archive', label: 'Exam archive' }];
+const RAYID_LOGO = 'https://base44.app/api/apps/6af445986703f21f765252f1/files/mp/public/6af445986703f21f765252f1/aff78ad46_rayid-logo.jpg';
 export default function ChromeBar({ rayidOn = false, onToggleRayid }) {
   const [now, setNow] = useState(() => new Date());
   const { pathname } = useLocation();
@@ -16,7 +17,7 @@ export default function ChromeBar({ rayidOn = false, onToggleRayid }) {
         <span className="hidden items-center gap-1.5 text-[11px] text-muted-foreground lg:flex"><Wifi className="h-3.5 w-3.5" /> DICOM connected</span>
         {pathname === '/' && <button type="button" onClick={onToggleRayid} aria-label={`RAYID ${rayidOn ? 'ON' : 'OFF'}, click to ${rayidOn ? 'disable' : 'enable'} assistance`} aria-pressed={rayidOn}
           className={cn('flex items-center gap-2 rounded-sm border px-2 py-1 transition-colors', rayidOn ? 'border-rayid bg-rayid/12 text-rayid shadow-[0_0_18px_-6px_hsl(var(--rayid))]' : 'border-border bg-secondary text-muted-foreground')}>
-          <Image src="https://media.base44.com/images/public/6af445986703f21f765252f1/264763ed4_logo.png" alt="RAYID" fittingType="fit" className={cn('h-7 w-7', !rayidOn && 'opacity-50 saturate-0')} style={{ filter: rayidOn ? 'grayscale(1) sepia(1) saturate(9) hue-rotate(-28deg) brightness(1.05) drop-shadow(0 0 4px hsl(var(--rayid)))' : undefined }} />
+          <Image src={RAYID_LOGO} alt="RAYID" fittingType="fit" className={cn('h-7 w-7 rounded-[3px] object-contain', !rayidOn && 'opacity-45 saturate-0')} />
           <span className={cn('text-xs font-semibold tracking-wide', rayidOn && 'text-rayid')}>RAYID</span><span className={cn('rounded-sm px-1.5 py-0.5 text-[10px] font-bold', rayidOn ? 'bg-rayid text-rayid-foreground' : 'bg-muted text-muted-foreground')}>{rayidOn ? 'ON' : 'OFF'}</span>
         </button>}
         <span className="hidden font-mono text-xs text-muted-foreground sm:inline">{now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
