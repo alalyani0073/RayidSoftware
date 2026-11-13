@@ -17,7 +17,7 @@ export default function RadiographView({ projection, capture, view, rayidOn, ass
   const shiftX = (pos.x || 0) * 0.45;
   const shiftY = (pos.y || 0) * -0.45;
   const box = (edges) => ({ left: `${edges.l}%`, top: `${edges.t}%`, width: `${edges.r - edges.l}%`, height: `${edges.b - edges.t}%` });
-  return <div className="flex h-full min-h-0 w-full flex-col items-center">
+  return <div className="flex h-full min-h-[300px] w-full flex-col items-center">
     <ImageFrame
       src={projection.radiograph}
       alt={`Radiograph for ${projection.label}${show && assessment.detected.length ? ` with the detected error marked: ${assessment.detected[0].title}` : ''}`}

@@ -18,7 +18,7 @@ export default function ProjectionReference({ ws, referenceOnly = false }) {
       <span className="hidden items-center gap-1.5 lg:inline-flex"><Camera className="h-3 w-3 text-primary" /><Arrow className="h-3 w-3" />Patient {horizontal ? '(back toward tube)' : '(table)'}<Arrow className="h-3 w-3" />Receptor</span>
       <span className="ml-auto uppercase tracking-wide">{horizontal ? 'Horizontal beam' : 'Overhead beam'} · {p.default_sid_cm} cm SID</span>
     </div>
-    <div id="collimation-controls" className="flex min-h-0 flex-1 items-stretch justify-center overflow-hidden bg-ws-canvas">
+    <div id="collimation-controls" className="flex min-h-[300px] flex-1 items-stretch justify-center overflow-hidden bg-ws-canvas">
       <ImageFrame
         src={source}
         alt={`Posed patient positioning from the X-ray tube housing: ${p.label}. ${p.cameraDirection}`}
