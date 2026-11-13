@@ -2,6 +2,7 @@ import { ArrowDown, ArrowRight, Camera } from 'lucide-react';
 import { referenceFor } from '@/lib/protocols';
 import CenteringOverlay from '@/components/workstation/CenteringOverlay';
 import CameraImage from '@/components/workstation/CameraImage';
+import PositioningTips from '@/components/workstation/PositioningTips';
 
 export default function ProjectionReference({ ws, referenceOnly = false }) {
   const p = ws.projection;
@@ -26,9 +27,9 @@ export default function ProjectionReference({ ws, referenceOnly = false }) {
         mirrored={mirrored}
       >
         {ws.rayidOn && <CenteringOverlay projection={p} position={ws.position} recommendation={ws.centerResult} busy={ws.centering} onCollimate={editable ? ws.changeCollimation : undefined} />}
-        {ws.rayidOn && !ws.position.visible && <span className="pointer-events-none absolute bottom-2 left-2 rounded-sm bg-ws-canvas/90 px-2 py-1 text-xs text-rayid">Landmark obscured; centering guidance withheld.</span>}
       </CameraImage>
     </div>
+    {ws.rayidOn && !referenceOnly && <PositioningTips projection={p} position={ws.position} recommendation={ws.centerResult} busy={ws.centering} editable={editable} />}
     <div className="flex items-center gap-x-3 gap-y-0.5 overflow-hidden border-t border-border px-3 py-1 text-[10px] text-muted-foreground">
       <span className={`whitespace-nowrap font-mono font-semibold ${ws.rayidOn ? 'text-rayid' : 'text-foreground'}`}>Field {ws.collimationCm.join(' × ')} cm</span>
       {ws.rayidOn && <><span className="whitespace-nowrap">Required {cmW} × {cmH} cm</span>

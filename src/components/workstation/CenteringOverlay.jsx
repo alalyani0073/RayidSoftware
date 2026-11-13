@@ -1,4 +1,4 @@
-import { collimation, fieldSizeCm, centeringOffset, requiredEdges, collimationFindings } from '@/components/workstation/simulation';
+import { collimation, requiredEdges } from '@/components/workstation/simulation';
 
 const shade = 'hsl(var(--ws-canvas) / 0.3)';
 
@@ -9,8 +9,6 @@ export default function CenteringOverlay({ projection, position, recommendation,
   const cy = y + position.y * 0.22;
   const c = collimation(position, projection);
   const req = requiredEdges(projection);
-  const findings = collimationFindings(position, projection);
-  const off = centeringOffset(position, projection);
   const draggable = Boolean(onCollimate) && !busy;
   const fw = c.r - c.l;
   const fh = c.b - c.t;
@@ -68,13 +66,6 @@ export default function CenteringOverlay({ projection, position, recommendation,
       <g className="text-chart-3"><circle cx={cx} cy={cy} r="1.8" fill="none" stroke="currentColor" strokeWidth="0.5" /></g>
       {position.visible && recommendation && <g className="text-chart-2"><path d={`M ${cx} ${cy} L ${x} ${y}`} stroke="currentColor" strokeWidth="0.6" /><circle cx={x} cy={y} r="3" fill="none" stroke="currentColor" strokeWidth="0.6" /><path d={`M ${x - 5} ${y} H ${x + 5} M ${x} ${y - 5} V ${y + 5}`} stroke="currentColor" strokeWidth="0.4" /></g>}
     </svg>
-    <span className="pointer-events-none absolute left-2 top-2 rounded-sm bg-ws-canvas/90 px-2 py-1 text-[11px] text-rayid">{busy ? 'Locating anatomical landmark…' : `Field ${fieldSizeCm(position, projection).join(' × ')} cm · req. ${projection.field_cm.join(' × ')}`}</span>
-    {draggable && <span className="pointer-events-none absolute right-2 top-2 rounded-sm bg-ws-canvas/90 px-2 py-1 text-[10px] text-rayid">Drag any of the four shutter edges</span>}
     {draggable && ['t', 'b', 'l', 'r'].map(grip)}
-    <div className="pointer-events-none absolute inset-x-2 bottom-2 flex flex-col items-start gap-1">
-      {findings.slice(0, 2).map((f) => <span key={f.edge + f.kind} className="max-w-full rounded-sm bg-ws-canvas/90 px-2 py-1 text-left text-[10px] font-semibold leading-snug text-rayid">{f.message}</span>)}
-      {off && <span className="rounded-sm bg-ws-canvas/90 px-2 py-1 text-[10px] font-semibold text-rayid">Central ray {Math.abs(position.x)} mm {position.x >= 0 ? 'lateral' : 'medial'} of {projection.centring}</span>}
-      {position.visible && recommendation && <span className="rounded-sm bg-ws-canvas/90 px-2 py-1 text-[11px] text-chart-2">Green: recommended landmark · {projection.centring}</span>}
-    </div>
   </div>;
 }
