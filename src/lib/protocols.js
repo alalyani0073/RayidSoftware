@@ -31,6 +31,11 @@ const PELVIS_AP_REFERENCE = 'https://base44.app/api/apps/6af445986703f21f765252f
 // foot is dorsiflexed to a right angle, malleoli equidistant from the receptor.
 const ANKLE_AP_REFERENCE = 'https://base44.app/api/apps/6af445986703f21f765252f1/files/mp/public/6af445986703f21f765252f1/c3a24438a_ankle-ap.png';
 
+// Tube-mounted camera reference supplied for the AP knee projection: overhead
+// view down the central ray onto the extended leg on the tabletop receptor, the
+// knee joint centred with the patella facing the tube.
+const KNEE_AP_REFERENCE = 'https://base44.app/api/apps/6af445986703f21f765252f1/files/mp/public/6af445986703f21f765252f1/338f04360_knee-ap.png';
+
 export const PROJECTIONS = [
   {
     key: 'chest_pa', name: 'Chest', view: 'PA', label: 'Chest — PA', region: 'Thorax', laterality: 'not_applicable',
@@ -210,9 +215,9 @@ export const PROJECTIONS = [
     centring: '1.3 cm distal to the patellar apex', cr: 'Anterior to posterior; perpendicular for average habitus',
     angulation: '0°; 3–5° caudad/cephalad depends on ASIS-to-table distance, not weight alone', angle: 0,
     tolerances: { rotation: 2.5, centring: 8, angle: 2 }, flexion: [0, 5],
-    focus: { x: 0.5, y: 0.48 }, field: { l: 26, r: 74, t: 8, b: 92 }, field_cm: [18, 24],
+    focus: { x: 0.5, y: 0.33 }, field: { l: 33, r: 67, t: 6, b: 62 }, field_cm: [18, 24],
     borders: { t: 'distal femoral metaphysis', b: 'proximal tibial metaphysis and tibial tuberosity', l: 'medial soft-tissue margin', r: 'fibular head and lateral soft tissue' },
-    reference: { male: `${M}3007b39ce_generated_image.png`, female: `${M}3007b39ce_generated_image.png` }, cameraDirection: 'Overhead tube → anterior knee → table receptor',
+    reference: { male: KNEE_AP_REFERENCE, female: KNEE_AP_REFERENCE }, cameraDirection: 'Overhead tube → anterior knee → table receptor',
     prep: PREP, positioning: ['Supine; leg extended as tolerated.', 'Femoral epicondyles parallel to the receptor; patella faces the tube.', 'Centre 1.3 cm below the patellar apex.', 'Include distal femur, proximal tibia/fibula and soft-tissue margins.'],
     criteria: ['Distal femur and proximal tibia/fibula included', 'Symmetric condyles and tibial spines', 'Patella superimposed on distal femur', 'Fibular head partially superimposed', 'Sharp trabeculae and soft-tissue margins'],
     limbLabel: 'Leg extended / epicondyles parallel', rotationCriterion: 'Femoral and tibial condyles symmetric', cutoff: 'proximal tibia and fibula',
