@@ -137,15 +137,40 @@ export function recommendedTechnique(patient, p) {
     reason: `${age} y · ${patient.weight_kg ? `${weight} kg` : 'weight unavailable, average adult assumed'}. ${size > 1 ? 'Higher' : size < 1 ? 'Lower' : 'Average'} attenuation estimated from body habitus. Short exposure limits motion; tight collimation supports ALARA. ${age < 16 ? 'Pediatric exposure follows the departmental pediatric technique chart.' : 'Confirm detector, grid and patient thickness against the departmental technique chart.'}` };
 }
 
-export function exposureIssues(t, r) {
-  if (!r) return [];
-  const issues = [];
-  if (Math.abs(t.kvp - r.kvp) > 10) issues.push(`kVp: selected ${t.kvp}; recommended ${r.kvp}.`);
-  if (Math.abs(t.mas - r.mas) / r.mas > 0.3) issues.push(`mAs: selected ${t.mas}; recommended ${r.mas}.`);
-  if (Math.abs(t.ma - r.ma) / r.ma > 0.35) issues.push(`mA: selected ${t.ma}; recommended ${r.ma}.`);
-  if (Math.abs(exposureTime(t) - r.exposure_time_ms) > Math.max(5, r.exposure_time_ms * 0.5)) issues.push(`Time: selected ${exposureTime(t)} ms; recommended ${r.exposure_time_ms} ms.`);
-  return issues;
+export const exposureSignature = (t) => `${t.kvp}|${t.ma}|${t.mas}|${t.aec_mode}`;
+
+const fmt = (n) => (Number.isInteger(n) ? String(n) : String(Number(Number(n).toFixed(1))));
+
+// Every exposure parameter is compared with the technique recommended for this
+// patient, examination and projection. Each finding reports the selected value,
+// the acceptable range, why it is inappropriate and the correction to make, so a
+// warning names the actual deviation instead of a generic notice.
+export function exposureFindings(t, ref, p) {
+  if (!ref) return [];
+  const findings = [];
+  if (Math.abs(t.kvp - ref.kvp) > 10) {
+    findings.push({ key: 'kvp', message: `kVp: selected ${fmt(t.kvp)} kV; recommended ${fmt(ref.kvp)} kV (acceptable ${Math.max(40, ref.kvp - 10)}–${Math.min(150, ref.kvp + 10)} kV). ${t.kvp < ref.kvp ? 'This is below the penetration required for this part, so the image will be underpenetrated, noisy and low in contrast.' : 'This is well above the penetration required, so contrast falls and dose rises without diagnostic benefit.'} Correction: set kVp to ${fmt(ref.kvp)} kV.` });
+  }
+  const masTolerance = ref.mas * 0.3;
+  if (Math.abs(t.mas - ref.mas) > masTolerance) {
+    findings.push({ key: 'mas', message: `mAs: selected ${fmt(t.mas)} mAs; recommended ${fmt(ref.mas)} mAs (acceptable ${fmt(Math.max(0.1, ref.mas - masTolerance))}–${fmt(ref.mas + masTolerance)} mAs). ${t.mas < ref.mas ? 'Too little exposure reaches the detector, so quantum mottle degrades fine detail.' : 'This exceeds the exposure this projection needs, raising patient dose without improving image quality.'} Correction: set mAs to ${fmt(ref.mas)} mAs.` });
+  }
+  const maTolerance = ref.ma * 0.35;
+  if (Math.abs(t.ma - ref.ma) > maTolerance) {
+    findings.push({ key: 'ma', message: `mA: selected ${fmt(t.ma)} mA; recommended ${fmt(ref.ma)} mA (acceptable ${fmt(ref.ma - maTolerance)}–${fmt(ref.ma + maTolerance)} mA). ${t.ma < ref.ma ? `The lower tube current lengthens the exposure to ${exposureTime(t)} ms, which allows patient motion to blur the image.` : `The higher tube current shortens the exposure to ${exposureTime(t)} ms, which is outside the reproducible range for this projection and loads the tube.`} Correction: set mA to ${fmt(ref.ma)} mA.` });
+  }
+  const time = exposureTime(t);
+  const timeTolerance = Math.max(5, ref.exposure_time_ms * 0.5);
+  if (Math.abs(time - ref.exposure_time_ms) > timeTolerance) {
+    findings.push({ key: 'time', message: `Exposure time: selected ${time} ms; recommended ${fmt(ref.exposure_time_ms)} ms (acceptable ${fmt(Math.max(1, ref.exposure_time_ms - timeTolerance))}–${fmt(ref.exposure_time_ms + timeTolerance)} ms). ${time > ref.exposure_time_ms ? 'The exposure lasts long enough for respiratory or voluntary movement to blur detail.' : 'The exposure is shorter than the recommended value, so the selected mA/mAs combination is outside the technique used for this projection.'} Correction: restore mA ${fmt(ref.ma)} and mAs ${fmt(ref.mas)} to give ${fmt(ref.exposure_time_ms)} ms.` });
+  }
+  if (p && t.aec_mode === 'on' && !p.aec) {
+    findings.push({ key: 'aec', message: `AEC: selected ON; automatic exposure control is not available for ${p.label} on this receptor. Photocell termination cannot be relied on, so the receptor may be under- or overexposed. Correction: set AEC to OFF and use the manual technique shown.` });
+  }
+  return findings;
 }
+
+export const exposureIssues = (t, r, p) => exposureFindings(t, r, p).map((finding) => finding.message);
 
 export function positioningIssues(s, p) {
   const issues = [];
@@ -200,7 +225,7 @@ export function scriptedAssessment(capture, p) {
   const rotated = Math.abs(pos.rotation) > p.tolerances.rotation;
   const motion = !pos.breathing;
   const angulationWrong = Math.abs(pos.angle - p.angle) > p.tolerances.angle;
-  const techniqueFaults = exposureIssues(capture.technique, recommendedTechnique(capture.patient, p));
+  const techniqueFaults = exposureIssues(capture.technique, recommendedTechnique(capture.patient, p), p);
   const detected = [];
   if (s.cutoff) detected.push({ title: 'Incomplete anatomical coverage', detail: `The ${field.join(' × ')} cm field excludes the ${p.cutoff}.` });
   if (wide.length) detected.push({ title: 'Excessive collimation', detail: wide.map((f) => f.message).join(' ') });

@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { projectionByKey, projectionFor } from '@/lib/protocols';
 import useModalityWorklist from '@/hooks/useModalityWorklist';
 import { caseFor, openingPosition } from '@/components/workstation/simCases';
-import { baselineTechnique, exposureTime, initialPosition, recommendedTechnique, positioningIssues, exposureIssues, collimationIssues, centeringOffset, fieldSizeCm, sampleFor, scriptedAssessment, collimation, borderCm, setBorderCm, requiredEdges, EDGES, alignmentSignature, movementLines } from '@/components/workstation/simulation';
+import { baselineTechnique, exposureTime, initialPosition, recommendedTechnique, positioningIssues, exposureFindings, exposureSignature, collimationIssues, centeringOffset, fieldSizeCm, sampleFor, scriptedAssessment, collimation, borderCm, setBorderCm, requiredEdges, EDGES, alignmentSignature, movementLines } from '@/components/workstation/simulation';
 
 export default function useWorkstation({ rayidOn }) {
   const worklist = useModalityWorklist();
@@ -27,6 +27,11 @@ export default function useWorkstation({ rayidOn }) {
   const [simOpen, setSimOpen] = useState(false);
   const [adjusted, setAdjusted] = useState(false);
   const warned = useRef('');
+  const exposureWarned = useRef('');
+  const exposureEdited = useRef(false);
+  // Settings the radiographer explicitly overrode, so an acknowledged warning is
+  // not raised again for the same values while a new change still warns.
+  const accepted = useRef({ collimation: '', centering: '', exposure: '' });
   const checkedPosition = useRef(null);
   const movementWarned = useRef('');
   const aiRun = useRef(0);
@@ -44,6 +49,16 @@ export default function useWorkstation({ rayidOn }) {
   function rememberAlignment(next) {
     checkedPosition.current = { rotation: next.rotation, angle: next.angle, flexion: next.flexion ?? 0, limb: next.limb, visible: next.visible, coverage: next.coverage, breathing: next.breathing };
     movementWarned.current = '';
+  }
+
+  // Current state of the field and the beam, used to tell an acknowledged
+  // override from a new adjustment.
+  function edgesSignature() {
+    const edges = collimation(position, projection);
+    return `${edges.l}:${edges.r}:${edges.t}:${edges.b}`;
+  }
+  function centeringSignature() {
+    return `${position.x}:${position.y}`;
   }
 
   useEffect(() => {
@@ -68,9 +83,10 @@ export default function useWorkstation({ rayidOn }) {
     return () => clearTimeout(timer);
   }, [rayidOn, capture, projection]);
 
-  // RAYID watches operator changes to centering and collimation and raises a warning
-  // only when the operator's own adjustment settles outside the required field, so
-  // the recommended default setup never produces a warning on load.
+  // Centering and collimation are validated continuously against the required
+  // field and landmark for the selected projection: a warning appears as soon as
+  // the field leaves tolerance and clears the moment it is corrected. Because the
+  // default setup equals the required field, an untouched study never warns.
   useEffect(() => {
     if (!rayidOn || stage !== 'positioning' || capture) return;
     const target = collimationErrors.length ? 'collimation' : centeringOffset(position, projection) ? 'centering' : '';
@@ -79,18 +95,39 @@ export default function useWorkstation({ rayidOn }) {
       setAlert(current => (current && (current.kind === 'collimation' || current.kind === 'centering') ? null : current));
       return;
     }
-    if (!adjusted || alert) return;
-    const edges = collimation(position, projection);
-    const signature = `${target}:${position.x}:${position.y}:${edges.l}:${edges.r}:${edges.t}:${edges.b}`;
-    if (warned.current === signature) return;
+    if (alert) return;
+    const signature = `${target}:${edgesSignature()}:${centeringSignature()}`;
+    const acceptedSignature = target === 'collimation' ? edgesSignature() : centeringSignature();
+    if (warned.current === signature || accepted.current[target] === acceptedSignature) return;
     const timer = setTimeout(() => {
       if (!active.current) return;
       warned.current = signature;
-      if (target === 'collimation') setAlert({ kind: 'collimation', lines: collimationIssues(position, projection), next: 'confirm' });
-      else setAlert({ kind: 'centering', next: 'confirm', lines: centeringLines() });
-    }, 1400);
+      if (target === 'collimation') setAlert({ kind: 'collimation', lines: collimationIssues(position, projection), next: 'confirm', signature });
+      else setAlert({ kind: 'centering', next: 'confirm', signature, lines: centeringLines() });
+    }, 700);
     return () => clearTimeout(timer);
-  }, [rayidOn, stage, capture, alert, adjusted, collimationErrors.length, position, projection]);
+  }, [rayidOn, stage, capture, alert, collimationErrors.length, position, projection]);
+
+  // Exposure parameters are validated on every manual change against the
+  // recommended technique for this patient, examination and projection, in both
+  // the preparation and positioning stages.
+  useEffect(() => {
+    if (!rayidOn || !plan || stage === 'review' || capture) return;
+    const findings = exposureFindings(technique, plan, projection);
+    if (!findings.length) {
+      exposureWarned.current = '';
+      setAlert(current => (current && current.kind === 'exposure' ? null : current));
+      return;
+    }
+    const signature = exposureSignature(technique);
+    if (!exposureEdited.current || alert || exposureWarned.current === signature || accepted.current.exposure === signature) return;
+    const timer = setTimeout(() => {
+      if (!active.current) return;
+      exposureWarned.current = signature;
+      setAlert({ kind: 'exposure', next: 'none', signature, lines: findings.map(finding => finding.message) });
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [rayidOn, plan, stage, capture, technique, projection, alert]);
 
   // Patient movement: any change of the patient's alignment after the position was
   // last checked is reported, so it is reassessed before the exposure.
@@ -107,13 +144,18 @@ export default function useWorkstation({ rayidOn }) {
     return () => clearTimeout(timer);
   }, [rayidOn, stage, capture, alert, position, projection]);
 
+  function resetWarnings() {
+    warned.current = ''; exposureWarned.current = ''; exposureEdited.current = false;
+    accepted.current = { collimation: '', centering: '', exposure: '' };
+    checkedPosition.current = null; movementWarned.current = '';
+  }
   function closeExam() {
-    aiRun.current++; warned.current = ''; checkedPosition.current = null; movementWarned.current = ''; setAdjusted(false);
+    aiRun.current++; resetWarnings(); setAdjusted(false);
     setExam(null); setStage('pre'); setCapture(null); setAssessment(null);
     setAlert(null); setCenterResult(null); setCentering(false); setEvaluating(false); setConfirmed(false); setError(''); setSimOpen(false);
   }
   function openExam(record) {
-    aiRun.current++; warned.current = '';
+    aiRun.current++; resetWarnings();
     const p = projectionFor(record.protocol_name);
     const assigned = caseFor(record);
     // Every study opens at the start of the examination workflow: no previously
@@ -133,7 +175,7 @@ export default function useWorkstation({ rayidOn }) {
     const next = projectionByKey(key);
     aiRun.current++;
     const side = next.laterality === 'not_applicable' ? 'not_applicable' : (projection.region === next.region && ['left', 'right'].includes(exam.laterality) ? exam.laterality : next.laterality);
-    warned.current = '';
+    resetWarnings();
     setExam({ ...exam, protocol_name: next.label, body_part: next.region, laterality: side });
     const nextPosition = openingPosition(next, simCase.fault);
     setTechnique(baselineTechnique(next)); setPosition(nextPosition); rememberAlignment(nextPosition); setAdjusted(false); setStage('pre');
@@ -141,6 +183,7 @@ export default function useWorkstation({ rayidOn }) {
     setAlert(null); setScenario(simCase.scenario); setRecommendationStatus('available');
   }
   function changeTechnique(key, value) {
+    exposureEdited.current = true;
     setTechnique(current => ({ ...current, [key]: value }));
     setRecommendationStatus('modified');
   }
@@ -217,12 +260,12 @@ export default function useWorkstation({ rayidOn }) {
     ];
   }
   function centeringWarning() {
-    setAlert({ kind: 'centering', next: 'confirm', lines: centeringLines() });
+    setAlert({ kind: 'centering', next: 'confirm', signature: centeringSignature(), lines: centeringLines() });
   }
   function confirmPosition() {
     if (!active.current) { setConfirmed(true); return; }
-    if (collimationErrors.length) { setAlert({ kind: 'collimation', lines: collimationErrors, next: 'confirm' }); return; }
-    if (centeringOffset(position, projection)) { centeringWarning(); return; }
+    if (collimationErrors.length && accepted.current.collimation !== edgesSignature()) { setAlert({ kind: 'collimation', lines: collimationErrors, next: 'confirm', signature: edgesSignature() }); return; }
+    if (centeringOffset(position, projection) && accepted.current.centering !== centeringSignature()) { centeringWarning(); return; }
     if (!positionErrors.length) { rememberAlignment(position); setConfirmed(true); return; }
     setAlert({ kind: 'position', lines: positionErrors });
   }
@@ -240,17 +283,17 @@ export default function useWorkstation({ rayidOn }) {
     else setConfirmed(true);
   }
   function prepare() {
-    const issues = active.current ? exposureIssues(technique, plan) : [];
-    if (issues.length) setAlert({ kind: 'exposure', lines: issues, next: 'prepare' });
+    const findings = active.current && plan ? exposureFindings(technique, plan, projection) : [];
+    if (findings.length && accepted.current.exposure !== exposureSignature(technique)) setAlert({ kind: 'exposure', lines: findings.map(finding => finding.message), next: 'prepare', signature: exposureSignature(technique) });
     else setStage('positioning');
   }
   function requestExposure() {
     if (!confirmed || busy) return;
     const field = active.current ? collimationIssues(position, projection) : [];
-    if (field.length) { setAlert({ kind: 'collimation', lines: field, next: 'expose' }); return; }
-    if (active.current && centeringOffset(position, projection)) { setAlert({ kind: 'centering', next: 'expose', lines: [`The selected centering point does not match the recommended anatomical landmark for ${projection.label}.`, `Recommended centering: ${projection.centring}.`] }); return; }
-    const issues = active.current ? exposureIssues(technique, plan) : [];
-    if (issues.length) setAlert({ kind: 'exposure', lines: issues, next: 'expose' });
+    if (field.length && accepted.current.collimation !== edgesSignature()) { setAlert({ kind: 'collimation', lines: field, next: 'expose', signature: edgesSignature() }); return; }
+    if (active.current && centeringOffset(position, projection) && accepted.current.centering !== centeringSignature()) { setAlert({ kind: 'centering', next: 'expose', signature: centeringSignature(), lines: centeringLines() }); return; }
+    const findings = active.current && plan ? exposureFindings(technique, plan, projection) : [];
+    if (findings.length && accepted.current.exposure !== exposureSignature(technique)) setAlert({ kind: 'exposure', lines: findings.map(finding => finding.message), next: 'expose', signature: exposureSignature(technique) });
     else acquire();
   }
   async function acquire() {
@@ -271,7 +314,7 @@ export default function useWorkstation({ rayidOn }) {
   function repeat() {
     setStage('positioning'); setCapture(null); setAssessment(null); setAlert(null); setConfirmed(false);
     setCenterResult(null); setScenario(simCase.scenario); setError('');
-    warned.current = ''; checkedPosition.current = null; movementWarned.current = ''; setAdjusted(false);
+    resetWarnings(); setAdjusted(false);
   }
   function requestAccept() {
     if (busy || (active.current && evaluating) || !capture) return;
@@ -292,31 +335,46 @@ export default function useWorkstation({ rayidOn }) {
     } catch (e) { setError('The examination could not be finalized. Please try again.'); }
     finally { setBusy(false); }
   }
+  // CONTINUE ANYWAY moves to an explicit confirmation step; only a second,
+  // recorded confirmation lets the flagged settings through.
+  function requestOverride() {
+    setAlert(current => (current ? { ...current, confirm: true } : current));
+  }
+  function cancelOverride() {
+    setAlert(current => (current ? { ...current, confirm: false } : current));
+  }
   function continueWarning() {
-    const kind = alert?.kind; const next = alert?.next; setAlert(null);
+    const kind = alert?.kind; const next = alert?.next;
+    if (kind === 'collimation') accepted.current.collimation = edgesSignature();
+    if (kind === 'centering') accepted.current.centering = centeringSignature();
+    if (kind === 'exposure') accepted.current.exposure = exposureSignature(technique);
+    setAlert(null);
     if (kind === 'position') setConfirmed(true);
     if (kind === 'movement') { rememberAlignment(position); setConfirmed(false); }
     if (kind === 'centering') {
       if (next === 'expose') {
-        const issues = active.current ? exposureIssues(technique, plan) : [];
-        if (issues.length) setAlert({ kind: 'exposure', lines: issues, next: 'expose' });
+        const findings = active.current && plan ? exposureFindings(technique, plan, projection) : [];
+        if (findings.length && accepted.current.exposure !== exposureSignature(technique)) setAlert({ kind: 'exposure', lines: findings.map(finding => finding.message), next: 'expose', signature: exposureSignature(technique) });
         else acquire();
       } else setConfirmed(true);
     }
     if (kind === 'collimation') {
       if (next === 'confirm') setConfirmed(true);
       else {
-        const issues = active.current ? exposureIssues(technique, plan) : [];
-        if (issues.length) setAlert({ kind: 'exposure', lines: issues, next: 'expose' });
+        const findings = active.current && plan ? exposureFindings(technique, plan, projection) : [];
+        if (findings.length && accepted.current.exposure !== exposureSignature(technique)) setAlert({ kind: 'exposure', lines: findings.map(finding => finding.message), next: 'expose', signature: exposureSignature(technique) });
         else acquire();
       }
     }
-    if (kind === 'exposure') { if (next === 'prepare') setStage('positioning'); else acquire(); }
+    if (kind === 'exposure') {
+      if (next === 'prepare') setStage('positioning');
+      else if (next === 'expose') acquire();
+    }
     if (kind === 'override') finish(true);
     if (kind === 'quality') setAlert({ kind: 'override', result: assessment });
   }
   return { worklist, exam, projection, simCase, stage, rayidOn, technique, plan, position, positionErrors, collimationErrors, collimationCm, collimationBorders, changeCollimation, setCollimationBorder, matchCollimation, confirmed, scenario, setScenario, simOpen, setSimOpen,
     capture, assessment, evaluating, centering, centerResult, alert, setAlert, busy, error, recommendationStatus, setRecommendationStatus, completion,
     openExam, closeExam, chooseProjection, changeTechnique, applyRecommendations, changePosition, moveCentring, introduceError, autoCenter, applyCentering,
-    adjusted, acknowledgeMovement, confirmPosition, correctCentering, correctCollimation, prepare, requestExposure, repeat, requestAccept, continueWarning };
+    adjusted, acknowledgeMovement, confirmPosition, correctCentering, correctCollimation, prepare, requestExposure, repeat, requestAccept, continueWarning, requestOverride, cancelOverride };
 }
