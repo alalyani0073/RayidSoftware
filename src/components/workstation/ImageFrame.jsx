@@ -6,8 +6,9 @@ import { useSize } from '@/hooks/use-size';
  * The single image display standard used everywhere clinical imagery appears.
  * The frame takes the largest box of the image's own aspect ratio that fits the
  * space it is given: it always fills the pane, keeps proportions, never crops
- * and never distorts. The ratio is read from the image itself unless one is
- * given explicitly, so annotation geometry stays locked to the anatomy.
+ * and never distorts. The area is measured absolutely (not from its own
+ * content), so the frame can never collapse to a fallback size, and the ratio
+ * is read from the image itself unless one is given explicitly.
  */
 export default function ImageFrame({
   src,
@@ -35,20 +36,22 @@ export default function ImageFrame({
   }, [src, ratio]);
 
   const explicit = ratio ? String(ratio).split('/').map((value) => Number(value.trim()) || 1) : null;
-  const aspect = explicit ? explicit[0] / explicit[1] : natural || 0.8;
-  const availW = Math.max(140, (size?.width || 360) - 2);
-  const availH = Math.max(140, (size?.height || 360) - 2);
+  const aspect = explicit ? explicit[0] / explicit[1] : natural || 1;
+  const availW = Math.max(120, (size?.width || 320) - 2);
+  const availH = Math.max(120, (size?.height || 320) - 2);
   const width = Math.round(Math.min(availW, availH * aspect));
   const height = Math.round(width / aspect);
-  return <div ref={hostRef} className={`flex h-full min-h-0 w-full min-w-0 flex-1 items-center justify-center ${className}`}>
-    <div
-      data-image-frame
-      {...frameProps}
-      className={`relative overflow-hidden border border-border bg-black ${frameClassName}`}
-      style={{ width, height }}
-    >
-      <Image src={src} alt={alt} fittingType="fit" className="h-full w-full" style={imageStyle} />
-      {children}
+  return <div ref={hostRef} className={`relative h-full min-h-0 w-full min-w-0 flex-1 ${className}`}>
+    <div className="absolute inset-0 flex items-center justify-center">
+      <div
+        data-image-frame
+        {...frameProps}
+        className={`relative overflow-hidden border border-border bg-black ${frameClassName}`}
+        style={{ width, height }}
+      >
+        <Image src={src} alt={alt} fittingType="fit" className="h-full w-full" style={imageStyle} />
+        {children}
+      </div>
     </div>
   </div>;
 }
