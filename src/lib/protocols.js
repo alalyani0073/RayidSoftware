@@ -34,6 +34,11 @@ const ANKLE_AP_REFERENCE = 'https://base44.app/api/apps/6af445986703f21f765252f1
 // Tube-mounted camera reference supplied for the AP knee projection: overhead
 // view down the central ray onto the extended leg on the tabletop receptor, the
 // knee joint centred with the patella facing the tube.
+// Tube-mounted camera reference supplied for the PA chest projection: the
+// patient stands back to the camera, anterior chest against the upright
+// receptor, hands on hips so the scapulae clear the lung fields.
+const CHEST_PA_REFERENCE = 'https://base44.app/api/apps/6af445986703f21f765252f1/files/mp/public/6af445986703f21f765252f1/868cdf153_chest-pa.png';
+
 const KNEE_AP_REFERENCE = 'https://base44.app/api/apps/6af445986703f21f765252f1/files/mp/public/6af445986703f21f765252f1/338f04360_knee-ap.png';
 
 export const PROJECTIONS = [
@@ -43,9 +48,9 @@ export const PROJECTIONS = [
     default_kvp: 120, default_mas: 2, default_ma: 320, default_sid_cm: 180, grid: 'yes', aec: true,
     centring: 'T7 midline, at the level of the inferior scapular angles', cr: 'Horizontal, posterior to anterior; perpendicular to the receptor',
     angulation: '0°', angle: 0, tolerances: { rotation: 3, centring: 15, angle: 2 },
-    focus: { x: 0.5, y: 0.43 }, field: { l: 20, r: 80, t: 6, b: 90 }, field_cm: [35, 43],
+    focus: { x: 0.5, y: 0.5 }, field: { l: 26, r: 74, t: 26, b: 74 }, field_cm: [35, 43],
     borders: { t: 'lung apices', b: 'costophrenic angles', l: 'left lateral chest wall', r: 'right lateral chest wall' },
-    reference: { male: `${M}8218f9fa5_generated_image.png`, female: `${M}163b97f3d_generated_image.png` }, cameraDirection: 'Horizontal tube → patient back → chest / upright receptor',
+    reference: { male: CHEST_PA_REFERENCE, female: CHEST_PA_REFERENCE }, cameraDirection: 'Horizontal tube → patient back → chest / upright receptor',
     prep: PREP, positioning: ['Erect at the upright Bucky, back against the receptor, feet slightly apart.', 'Chin raised; shoulders depressed and rolled forward.', 'Hands at hips; move scapulae out of lung fields.', 'Centre T7; include apices and both costophrenic angles; full inspiration.'],
     criteria: ['Apices and both costophrenic angles included', 'Clavicular heads equidistant from spine', 'Scapulae clear of lungs', 'Adequate inspiration, about 10 posterior ribs', 'Sharp lung and diaphragm margins'],
     limbLabel: 'Shoulders rolled forward / scapulae clear', rotationCriterion: 'Clavicular heads equidistant from spine', cutoff: 'costophrenic angles',
