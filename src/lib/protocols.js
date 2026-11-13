@@ -11,6 +11,11 @@ const commons = (file) => `https://commons.wikimedia.org/wiki/File:${file}`;
 // reference view is always the scene seen down the central ray.
 const PREP = ['Confirm patient, examination and side marker.', 'Remove obscuring clothing, jewellery or metal; never force an injured limb.'];
 
+// Tube-mounted camera reference supplied for the AP tibia/fibula projection:
+// overhead view down the central ray onto the lower leg lying on the tabletop
+// receptor, foot dorsiflexed, unaffected leg clear of the field.
+const TIBIA_AP_REFERENCE = 'https://base44.app/api/apps/6af445986703f21f765252f1/files/mp/public/6af445986703f21f765252f1/dabb119cd_tibia-ap.jpg';
+
 export const PROJECTIONS = [
   {
     key: 'chest_pa', name: 'Chest', view: 'PA', label: 'Chest — PA', region: 'Thorax', laterality: 'not_applicable',
@@ -220,9 +225,9 @@ export const PROJECTIONS = [
     default_kvp: 66, default_mas: 6, default_ma: 200, default_sid_cm: 100, grid: 'no', aec: false,
     centring: 'Mid-shaft of the tibia, midway between the knee and the ankle', cr: 'Perpendicular to the mid-tibial shaft',
     angulation: '0°', angle: 0, tolerances: { rotation: 3, centring: 15, angle: 2 },
-    focus: { x: 0.5, y: 0.5 }, field: { l: 35, r: 65, t: 5, b: 93 }, field_cm: [14, 40],
-    borders: { t: 'knee joint', b: 'ankle joint', l: 'medial soft-tissue margin', r: 'fibular shaft and lateral soft tissue' },
-    reference: { male: `${M}08b376d43_generated_image.png`, female: `${M}08b376d43_generated_image.png` }, cameraDirection: 'Overhead tube → anterior lower leg → tabletop receptor',
+    focus: { x: 0.51, y: 0.51 }, field: { l: 15.5, r: 79.5, t: 44, b: 64 }, field_cm: [40, 14],
+    borders: { t: 'posterior soft-tissue margin', b: 'anterior soft-tissue margin', l: 'knee joint', r: 'ankle joint' },
+    reference: { male: TIBIA_AP_REFERENCE, female: TIBIA_AP_REFERENCE }, cameraDirection: 'Overhead tube → anterior lower leg → tabletop receptor',
     prep: PREP, positioning: ['Supine; leg extended, toes pointing up.', 'Both knee and ankle joints are required on the image.', 'Centre the mid-tibial shaft.', 'Include the knee and ankle joints.'],
     criteria: ['Knee and ankle joints included', 'Tibia and fibula demonstrated along their length', 'No rotation of the leg', 'Ankle mortise visible', 'Sharp cortical detail'],
     limbLabel: 'Leg extended / toes up', rotationCriterion: 'Tibia and fibula side by side without overlap', cutoff: 'ankle joint',
