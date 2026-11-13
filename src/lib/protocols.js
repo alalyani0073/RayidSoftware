@@ -329,7 +329,7 @@ export const PROJECTIONS = [
     default_kvp: 85, default_mas: 25, default_ma: 250, default_sid_cm: 100, grid: 'yes', aec: true,
     centring: 'Midline at the level of the umbilicus (L3), upper border at the lower costal margins and lower border just above the pubic symphysis', cr: 'Perpendicular to the receptor at L3', angulation: '0°', angle: 0,
     tolerances: { rotation: 2, centring: 12, angle: 2 },
-    focus: { x: 0.5, y: 0.414 }, field: { l: 31, r: 69, t: 29, b: 51 }, field_cm: [30, 35],
+    focus: { x: 0.5, y: 0.412 }, field: { l: 30, r: 75, t: 25, b: 63 }, field_cm: [30, 35],
     borders: { t: 'T12 vertebral body', b: 'sacrum and sacroiliac joints', l: 'left transverse processes and psoas margin', r: 'right transverse processes and psoas margin' },
     reference: { male: `${M}1c49a35a4_generated_image.png`, female: `${M}1c49a35a4_generated_image.png` }, cameraDirection: 'Overhead tube → anterior abdomen → table Bucky',
     prep: PREP, positioning: ['Supine; hips and shoulders level, knees slightly flexed if comfortable.', 'Arms raised clear of the lumbar spine.', 'Centre L3, at the level of the lower costal margin.', 'Include T12 to the sacrum and sacroiliac joints.'],
