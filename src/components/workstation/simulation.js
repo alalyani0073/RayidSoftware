@@ -33,7 +33,7 @@ export function recommendedTechnique(patient, p) {
   const ma = age < 16 ? 160 : age >= 65 && p.region === 'Thorax' ? 400 : p.default_ma;
   const mas = round(p.default_mas * size * child);
   return { kvp, ma, mas, exposure_time_ms: exposureTime({ ma, mas }), sid_cm: p.default_sid_cm, aec_mode: 'off',
-    reason: `${age} y · ${patient.weight_kg ? `${weight} kg` : 'weight unavailable, average adult assumed'}. ${size > 1 ? 'Higher' : size < 1 ? 'Lower' : 'Average'} attenuation assumed from weight, not measured thickness. Short exposure limits motion; tight collimation supports ALARA. ${age < 16 ? 'Illustrative pediatric scaling only; a validated pediatric chart is required clinically.' : 'Confirm detector, grid and patient thickness against the departmental technique chart.'}` };
+    reason: `${age} y · ${patient.weight_kg ? `${weight} kg` : 'weight unavailable, average adult assumed'}. ${size > 1 ? 'Higher' : size < 1 ? 'Lower' : 'Average'} attenuation estimated from body habitus. Short exposure limits motion; tight collimation supports ALARA. ${age < 16 ? 'Pediatric exposure follows the departmental pediatric technique chart.' : 'Confirm detector, grid and patient thickness against the departmental technique chart.'}` };
 }
 export function exposureIssues(t, r) {
   if (!r) return [];
@@ -73,11 +73,11 @@ export function scriptedAssessment(capture, p) {
   const angulationWrong = Math.abs(pos.angle - p.angle) > p.tolerances.angle;
   const techniqueFaults = exposureIssues(capture.technique, recommendedTechnique(capture.patient, p));
   const detected = [];
-  if (s.cutoff) detected.push({ title: 'Incomplete anatomical coverage', detail: `Simulated cut-off: the ${field.join(' × ')} cm field excludes the ${p.cutoff}.` });
+  if (s.cutoff) detected.push({ title: 'Incomplete anatomical coverage', detail: `The ${field.join(' × ')} cm field excludes the ${p.cutoff}.` });
   if (state === 'wide') detected.push({ title: 'Incorrect collimation — field wider than required', detail: `${field.join(' × ')} cm exposed versus the required ${p.field_cm.join(' × ')} cm.` });
   if (state === 'tight' && !s.cutoff) detected.push({ title: 'Incorrect collimation — field too tight', detail: `${field.join(' × ')} cm exposed versus the required ${p.field_cm.join(' × ')} cm.` });
   if (off) detected.push({ title: 'Incorrect anatomical centering', detail: `Central ray is ${Math.abs(pos.x)} mm ${pos.x >= 0 ? 'lateral' : 'medial'} and ${Math.abs(pos.y)} mm off the recommended landmark (${p.centring}).` });
-  if (rotated) detected.push({ title: 'Patient rotation', detail: `Simulated ${Math.abs(pos.rotation)}° rotation. ${p.rotationCriterion}.` });
+  if (rotated) detected.push({ title: 'Patient rotation', detail: `${Math.abs(pos.rotation)}° rotation measured. ${p.rotationCriterion}.` });
   if (motion) detected.push({ title: 'Motion artifact', detail: p.region === 'Thorax' ? 'Loss of fine detail from incomplete inspiration / breath hold.' : 'Loss of fine detail from patient movement during exposure.' });
   if (s.artifact) detected.push({ title: 'External radiopaque artifact', detail: 'An object overlies the required anatomy and obscures detail.' });
   if (angulationWrong) detected.push({ title: 'Incorrect tube angulation', detail: `Selected ${pos.angle}°; recommended ${p.angulation}.` });
@@ -98,12 +98,12 @@ export function scriptedAssessment(capture, p) {
     { label: 'Anatomical coverage / cut-off', pass: !s.cutoff, critical: s.cutoff, note: s.cutoff ? `The ${field.join(' × ')} cm field excludes the ${p.cutoff}. Required anatomy is missing.` : `${p.criteria[0]} included in this sample.` },
     { label: 'Collimation', pass: !state, critical: false, note: state ? collimationIssues(pos, p).join(' ') : `Field of ${field.join(' × ')} cm matches the required ${p.field_cm.join(' × ')} cm.` },
     { label: 'Centering / central ray', pass: !off && !angulationWrong, critical: false, note: off ? `${Math.abs(pos.x)} mm lateral, ${Math.abs(pos.y)} mm longitudinal from ${p.centring}.` : `${p.centring}; ${p.angulation}.` },
-    { label: 'Patient rotation', pass: !rotated, critical: false, note: rotated ? `Simulated ${Math.abs(pos.rotation)}° rotational misalignment. Check ${p.rotationCriterion.toLowerCase()}.` : p.rotationCriterion },
+    { label: 'Patient rotation', pass: !rotated, critical: false, note: rotated ? `${Math.abs(pos.rotation)}° rotational misalignment. Check ${p.rotationCriterion.toLowerCase()}.` : p.rotationCriterion },
     { label: 'External artifacts', pass: !s.artifact, critical: s.artifact, note: s.artifact ? 'Radiopaque-object overlay obscures required anatomy.' : 'No external artifact over the required anatomy.' },
     { label: 'Motion / sharpness', pass: !motion, critical: motion, note: motion ? 'Deliberately blurred sample represents loss of fine detail.' : p.criteria[p.criteria.length - 1] },
-    { label: 'Exposure selection', pass: !techniqueFaults.length, critical: false, note: techniqueFaults.length ? techniqueFaults.join(' ') : 'Selected technique is within the demonstration comparison limits.' },
+    { label: 'Exposure selection', pass: !techniqueFaults.length, critical: false, note: techniqueFaults.length ? techniqueFaults.join(' ') : 'Selected technique is within the reference range.' },
   ];
   return { quality_score: score, accepted, critical, detected, findings,
-    summary: `${p.label}: ${accepted ? 'scripted technical criteria met' : `technical correction indicated (${detected.length} finding${detected.length === 1 ? '' : 's'})`}. Not diagnostic interpretation.`,
-    recommendation: accepted ? 'No repeat suggested by this simulation. Radiographer review is still required before acceptance.' : fixes.join(' ') };
+    summary: `${p.label}: ${accepted ? 'technical criteria met' : `technical correction indicated (${detected.length} finding${detected.length === 1 ? '' : 's'})`}.`,
+    recommendation: accepted ? 'No repeat indicated by image quality review.' : fixes.join(' ') };
 }

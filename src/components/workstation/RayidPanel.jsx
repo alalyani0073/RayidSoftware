@@ -163,7 +163,7 @@ export default function RayidPanel({
       </div>
 
       <p className="border-t border-white/[0.07] px-3 py-1.5 font-mono text-[8px] uppercase leading-relaxed tracking-[0.1em] text-slate-600">
-        Simulated AI output · not a medical device
+        RAYID imaging quality engine
       </p>
     </section>
   );

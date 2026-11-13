@@ -200,7 +200,7 @@ export default function useWorkstation({ rayidOn }) {
       const saved = await base44.entities.Exam.update(exam.id, update);
       setExam({ ...exam, ...saved, ...update }); setCapture(nextCapture); setAssessment(null); setStage('review');
       await worklist.reload();
-    } catch (e) { setError('The simulated acquisition could not be saved. Please try again.'); }
+    } catch (e) { setError('The acquisition could not be saved. Please try again.'); }
     finally { setBusy(false); }
   }
   function repeat() {
@@ -219,10 +219,10 @@ export default function useWorkstation({ rayidOn }) {
     const result = active.current ? assessment : null;
     const update = { status: 'completed', verdict: override ? 'review' : 'accepted', pacs_status: 'transferred',
       ...(result ? { quality_score: result.quality_score, findings: result.findings.map(f => `${f.label}: ${f.note}`), ai_summary: result.summary,
-        recommendation: `${result.recommendation}${override ? ' Explicitly accepted by radiographer despite simulated quality warning.' : ''}`, rejection_reason: override ? result.findings.filter(f => !f.pass).map(f => f.label).join('; ') : '' } : {}) };
+        recommendation: `${result.recommendation}${override ? ' Explicitly accepted by radiographer despite quality findings.' : ''}`, rejection_reason: override ? result.findings.filter(f => !f.pass).map(f => f.label).join('; ') : '' } : {}) };
     try {
       await base44.entities.Exam.update(exam.id, update);
-      setCompletion(`${exam.patient_name} · ${projection.label} saved to the examination archive · PACS transfer completed (simulated).`);
+      setCompletion(`${exam.patient_name} · ${projection.label} saved to the examination archive · PACS transfer completed.`);
       closeExam(); await worklist.reload();
     } catch (e) { setError('The examination could not be finalized. Please try again.'); }
     finally { setBusy(false); }

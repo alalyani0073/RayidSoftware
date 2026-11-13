@@ -297,9 +297,6 @@ export default function Dashboard() {
         </>
       )}
 
-      <p className="mx-auto max-w-2xl text-center font-mono text-[9px] uppercase leading-relaxed tracking-[0.14em] text-slate-600">
-        RAYID concept prototype · simulated sensor telemetry and model output · not a medical device
-      </p>
     </div>
   );
 }

@@ -12,7 +12,7 @@ export default function CenteringControl({ ws }) {
       <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Detector field</dt><dd className="font-mono">{p.detector}</dd></div>
     </dl>
     {r && <div className="mt-2 border border-rayid/40 bg-rayid/5 p-2 text-[11px]"><p className="font-semibold text-rayid">{r.applied ? 'CENTERING ADJUSTMENT CONFIRMED' : 'PROPOSED ADJUSTMENT · REVIEW BEFORE APPLYING'}</p><p className="mt-1">Horizontal: {r.dx} mm · Longitudinal: {r.dy} mm</p><p className="mt-0.5">Tube angle: {r.angle}°. Patient rotation is not corrected automatically.</p>{!r.applied && <button onClick={ws.applyCentering} className="mt-2 w-full rounded-sm bg-rayid px-2 py-1.5 font-semibold text-rayid-foreground">CONFIRM CENTERING ADJUSTMENT</button>}</div>}
-    <p className={`mt-2 text-[11px] ${ws.positionErrors.length ? 'text-rayid' : 'text-chart-2'}`}>{ws.positionErrors.length ? `Positioning: ${ws.positionErrors.length} criterion/criteria need correction` : 'Positioning: criteria met in simulation'}</p>
+    <p className={`mt-2 text-[11px] ${ws.positionErrors.length ? 'text-rayid' : 'text-chart-2'}`}>{ws.positionErrors.length ? `Positioning: ${ws.positionErrors.length} criterion/criteria need correction` : 'Positioning: criteria met'}</p>
     {ws.positionErrors.length > 0 && <p className="mt-0.5 text-[10px] leading-snug text-muted-foreground">{ws.positionErrors[0]}</p>}
   </section>;
 }

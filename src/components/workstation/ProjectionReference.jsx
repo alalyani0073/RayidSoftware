@@ -40,7 +40,7 @@ export default function ProjectionReference({ ws, referenceOnly = false }) {
       <span className="whitespace-nowrap font-mono font-semibold text-rayid">Field {ws.collimationCm.join(' × ')} cm</span>
       <span className="whitespace-nowrap">Required {cmW} × {cmH} cm</span>
       {ws.collimationErrors.length > 0 ? <span className="whitespace-nowrap font-semibold text-rayid">Outside required field</span> : <span className="whitespace-nowrap text-chart-2">Within tolerance</span>}
-      <span className="hidden min-w-0 truncate xl:inline" title={`Centring: ${p.centring}. ${p.cameraDirection}. Posed photograph, not a live feed; no anatomy is measured.`}>Centring: {p.centring}</span>
+      <span className="hidden min-w-0 truncate xl:inline" title={`Centring: ${p.centring}. ${p.cameraDirection}.`}>Centring: {p.centring}</span>
       {editable && <button onClick={ws.matchCollimation} className="ml-auto shrink-0 rounded-sm border border-border px-2 py-0.5 font-semibold text-rayid hover:bg-accent">MATCH FIELD</button>}
     </div>
   </section>;

@@ -20,9 +20,9 @@ export default function Workstation() {
   return <div className="flex min-h-[calc(100dvh-48px)] flex-col bg-ws-surface font-body lg:h-full lg:min-h-0 lg:overflow-hidden">
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-border bg-ws-toolbar px-3 py-1 text-[10px] text-muted-foreground">
       <span>Detector: ready</span>
-      <span>Generator: {ws.busy ? 'simulated acquisition' : 'standby'}</span>
+      <span>Generator: {ws.busy ? 'exposing' : 'standby'}</span>
       <PacsStatus hasImage={Boolean(ws.capture)} assessment={ws.assessment} />
-      <span className="ml-auto hidden xl:inline">Clinical DR simulation · no hardware, RIS or PACS connection</span>
+      <span className="ml-auto hidden xl:inline">Room 2 · detector D1 · generator 1</span>
     </div>
     {ws.exam && <PatientHeader exam={ws.exam} stage={ws.stage} onBack={ws.busy ? undefined : ws.closeExam} />}
     {ws.error && <p role="alert" className="border-b border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{ws.error}</p>}

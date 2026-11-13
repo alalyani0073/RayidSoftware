@@ -11,7 +11,7 @@ export const PROJECTIONS = [
     key: 'knee_ap', name: 'Knee', view: 'AP', label: 'Knee — AP', region: 'Lower limb', laterality: 'right',
     detector: '24 × 30 cm · tabletop receptor', default_kvp: 66, default_mas: 4, default_ma: 200, default_sid_cm: 100, grid: 'no', aec: false,
     centring: '1.3 cm distal to the patellar apex', cr: 'Anterior to posterior; perpendicular for average habitus',
-    angulation: '0° in this demo; 3–5° caudad/cephalad depends on ASIS-to-table distance, not weight alone', angle: 0,
+    angulation: '0°; 3–5° caudad/cephalad depends on ASIS-to-table distance, not weight alone', angle: 0,
     tolerances: { rotation: 2.5, centring: 8, angle: 2 }, flexion: [0, 5], focus: { x: 0.5, y: 0.52 }, field: { w: 56, h: 68 },
     cameraAspect: '1 / 1',
     reference: { male: `${M}47af0c9f7_generated_image.png`, female: `${M}47af0c9f7_generated_image.png` }, field_cm: [18, 24], cameraDirection: 'Overhead tube → anterior knee → table receptor',
@@ -25,7 +25,7 @@ export const PROJECTIONS = [
   {
     key: 'knee_lat', name: 'Knee', view: 'Lateral', label: 'Knee — Lateral', region: 'Lower limb', laterality: 'right',
     detector: '24 × 30 cm · tabletop receptor', default_kvp: 66, default_mas: 4, default_ma: 200, default_sid_cm: 100, grid: 'no', aec: false,
-    centring: '2.5 cm distal to the medial femoral epicondyle', cr: 'Medial to lateral; 5–7° cephalad', angulation: '5–7° cephalad; 6° in this demo', angle: 6,
+    centring: '2.5 cm distal to the medial femoral epicondyle', cr: 'Medial to lateral; 5–7° cephalad', angulation: '5–7° cephalad; 6° for this projection', angle: 6,
     tolerances: { rotation: 2, centring: 8, angle: 1 }, flexion: [20, 30], focus: { x: 0.5, y: 0.5 }, field: { w: 60, h: 70 },
     cameraAspect: '1 / 1',
     reference: { male: `${M}4d6c76b70_generated_image.png`, female: `${M}4d6c76b70_generated_image.png` }, field_cm: [18, 24], cameraDirection: 'Overhead tube → medial knee → lateral surface / receptor',
@@ -53,7 +53,7 @@ export const PROJECTIONS = [
   {
     key: 'chest_ap', name: 'Chest', view: 'AP', label: 'Chest — AP', region: 'Thorax', laterality: 'not_applicable',
     detector: '35 × 43 cm · receptor behind thorax', default_kvp: 110, default_mas: 3.2, default_ma: 320, default_sid_cm: 120, grid: 'yes', aec: false,
-    centring: 'T7 midline, approximately 8–10 cm below jugular notch', cr: 'Anterior to posterior; perpendicular to sternum / receptor', angulation: '0° for this supine demo; adapt to patient / receptor orientation', angle: 0,
+    centring: 'T7 midline, approximately 8–10 cm below jugular notch', cr: 'Anterior to posterior; perpendicular to sternum / receptor', angulation: '0° supine; adapt to patient / receptor orientation', angle: 0,
     tolerances: { rotation: 4, centring: 20, angle: 2 }, focus: { x: 0.5, y: 0.5 }, field: { w: 76, h: 82 },
     cameraAspect: '4 / 5',
     reference: { male: `${M}709abeb20_generated_image.png`, female: `${M}26a4e6b55_generated_image.png` }, field_cm: [35, 43], cameraDirection: 'Overhead tube → anterior thorax → receptor behind patient',

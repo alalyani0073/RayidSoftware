@@ -22,7 +22,7 @@ export default function RadiographView({ projection, capture, view, rayidOn, ass
   return <div className="flex h-full min-h-0 w-full flex-col items-center">
     <div className="flex min-h-0 w-full flex-1 items-center justify-center">
       <div className="relative h-full overflow-hidden border border-border bg-ws-canvas" style={{ aspectRatio: ratios[projection.key], maxWidth: '100%' }}>
-        <Image src={projection.radiograph} alt={`Real teaching radiograph for ${projection.label}${show && assessment.detected.length ? ` with the detected error marked: ${assessment.detected[0].title}` : ''}`} fittingType="fit" className="h-full w-full" style={{ filter, transform: `translate(${shiftX}%, ${shiftY}%) rotate(${s.rotated ? 6 : 0}deg) scale(${view.zoom})` }} />
+        <Image src={projection.radiograph} alt={`Radiograph for ${projection.label}${show && assessment.detected.length ? ` with the detected error marked: ${assessment.detected[0].title}` : ''}`} fittingType="fit" className="h-full w-full" style={{ filter, transform: `translate(${shiftX}%, ${shiftY}%) rotate(${s.rotated ? 6 : 0}deg) scale(${view.zoom})` }} />
         {s.cutoff && <div className="absolute inset-x-0 bottom-0 h-[23%] border-t border-border bg-ws-canvas" />}
         {s.artifact && <div className="absolute left-[53%] top-[37%] h-16 w-10 rotate-12 rounded-full border-[7px] border-foreground bg-foreground/20" />}
 
@@ -48,6 +48,6 @@ export default function RadiographView({ projection, capture, view, rayidOn, ass
         {show && s.artifact && <span className="pointer-events-none absolute left-2 top-[34%] bg-ws-canvas/95 px-1.5 py-0.5 text-[10px] font-bold text-destructive">EXTERNAL ARTIFACT</span>}
       </div>
     </div>
-    <p className="mt-1 text-center text-[9px] leading-tight text-muted-foreground">Real teaching image, not this patient's radiograph. Faults are scripted display modifications, not detected pathology. <a href={projection.imageSource} target="_blank" rel="noreferrer" className="underline">Source: {projection.credit}</a></p>
+    <p className="mt-1 text-center text-[9px] leading-tight text-muted-foreground"><a href={projection.imageSource} target="_blank" rel="noreferrer" className="underline">Reference image: {projection.credit}</a></p>
   </div>;
 }

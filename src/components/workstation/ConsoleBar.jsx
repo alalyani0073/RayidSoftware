@@ -41,7 +41,7 @@ export default function ConsoleBar({ stage, open, rayidOn, onToggleRayid }) {
       </div>
 
       <span className="ml-auto hidden font-mono text-[8px] uppercase tracking-[0.14em] text-slate-600 md:inline">
-        Simulated console
+        Console
       </span>
 
       <button
