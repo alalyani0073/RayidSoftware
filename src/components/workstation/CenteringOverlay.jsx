@@ -2,7 +2,7 @@ import { collimation, requiredEdges } from '@/components/workstation/simulation'
 
 const shade = 'hsl(var(--ws-canvas) / 0.3)';
 
-export default function CenteringOverlay({ projection, position, recommendation, busy, onCollimate }) {
+export default function CenteringOverlay({ projection, position, recommendation, busy, onCollimate, onCentre }) {
   const x = projection.focus.x * 100;
   const y = projection.focus.y * 100;
   const cx = x + position.x * 0.22;
@@ -24,6 +24,30 @@ export default function CenteringOverlay({ projection, position, recommendation,
       const fraction = vertical ? (e.clientX - box.left) / box.width : (e.clientY - box.top) / box.height;
       onCollimate(edge, Math.round(Math.min(98, Math.max(2, fraction * 100)) * 10) / 10);
     };
+    const stop = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', stop);
+      window.removeEventListener('pointercancel', stop);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', stop);
+    window.addEventListener('pointercancel', stop);
+  };
+
+  // The radiographer drags the central ray marker anywhere over the displayed
+  // patient; the offset in millimetres is stored on the examination position so
+  // centering validation, warnings and the acquisition record all follow it.
+  const startCentre = (event) => {
+    if (!onCentre) return;
+    const frame = event.currentTarget.closest('[data-camera-frame]');
+    if (!frame) return;
+    event.preventDefault();
+    const box = frame.getBoundingClientRect();
+    const move = (e) => onCentre(
+      Math.min(96, Math.max(4, ((e.clientX - box.left) / box.width) * 100)),
+      Math.min(96, Math.max(4, ((e.clientY - box.top) / box.height) * 100)),
+    );
+    move(event);
     const stop = () => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', stop);
@@ -67,5 +91,17 @@ export default function CenteringOverlay({ projection, position, recommendation,
       {position.visible && recommendation && <g className="text-chart-2"><path d={`M ${cx} ${cy} L ${x} ${y}`} stroke="currentColor" strokeWidth="0.6" /><circle cx={x} cy={y} r="3" fill="none" stroke="currentColor" strokeWidth="0.6" /><path d={`M ${x - 5} ${y} H ${x + 5} M ${x} ${y - 5} V ${y + 5}`} stroke="currentColor" strokeWidth="0.4" /></g>}
     </svg>
     {draggable && ['t', 'b', 'l', 'r'].map(grip)}
+    <div
+      role="slider"
+      aria-label="Central ray centering point"
+      aria-valuenow={Math.round(cx)}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      onPointerDown={startCentre}
+      className={`absolute z-10 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 touch-none items-center justify-center rounded-full border ${onCentre ? 'pointer-events-auto cursor-move border-chart-3 bg-chart-3/10' : 'pointer-events-none border-chart-3/40'}`}
+      style={{ left: `${cx}%`, top: `${cy}%` }}
+    >
+      <span className="block h-6 w-6 rounded-full border border-chart-3/70" />
+    </div>
   </div>;
 }

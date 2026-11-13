@@ -26,7 +26,7 @@ export default function ProjectionReference({ ws, referenceOnly = false }) {
         alt={`Posed patient positioning from the X-ray tube housing: ${p.label}. ${p.cameraDirection}`}
         mirrored={mirrored}
       >
-        {ws.rayidOn && <CenteringOverlay projection={p} position={ws.position} recommendation={ws.centerResult} busy={ws.centering} onCollimate={editable ? ws.changeCollimation : undefined} />}
+        {ws.rayidOn && <CenteringOverlay projection={p} position={ws.position} recommendation={ws.centerResult} busy={ws.centering} onCollimate={editable ? ws.changeCollimation : undefined} onCentre={editable ? ws.moveCentring : undefined} />}
       </CameraImage>
     </div>
     {ws.rayidOn && !referenceOnly && <PositioningTips projection={p} position={ws.position} recommendation={ws.centerResult} busy={ws.centering} editable={editable} />}

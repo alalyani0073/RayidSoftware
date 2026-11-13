@@ -71,7 +71,7 @@ export default function useWorkstation({ rayidOn }) {
       if (!active.current) return;
       warned.current = signature;
       if (target === 'collimation') setAlert({ kind: 'collimation', lines: collimationIssues(position, projection), next: 'confirm' });
-      else setAlert({ kind: 'centering', next: 'confirm', lines: [`The selected centering point does not match the recommended anatomical landmark for ${projection.label}.`, `Recommended centering: ${projection.centring}.`, `Current offset: ${position.x} mm lateral, ${position.y} mm longitudinal.`] });
+      else setAlert({ kind: 'centering', next: 'confirm', lines: centeringLines() });
     }, 1400);
     return () => clearTimeout(timer);
   }, [rayidOn, stage, capture, alert, collimationErrors.length, position, projection]);
@@ -121,6 +121,23 @@ export default function useWorkstation({ rayidOn }) {
     setPosition(current => ({ ...current, collimation: { ...collimation(current, projection), [edge]: percent } }));
     setConfirmed(false);
   }
+  // Pointer drag on the camera view stores the chosen central ray position as
+  // beam offsets in millimetres around the projection's recommended landmark.
+  function moveCentring(percentX, percentY) {
+    const toMm = (percent, axis) => Math.round((percent - projection.focus[axis] * 100) / 0.22);
+    const x = toMm(percentX, 'x');
+    const y = toMm(percentY, 'y');
+    setPosition(current => {
+      // The collimated field travels with the central ray, so the shutter
+      // rectangle keeps its size and balance around the new centering point.
+      const edges = collimation(current, projection);
+      const dx = (x - current.x) * 0.22;
+      const dy = (y - current.y) * 0.22;
+      const shift = (value, delta) => Math.round(Math.min(98, Math.max(2, value + delta)) * 10) / 10;
+      return { ...current, x, y, collimation: { l: shift(edges.l, dx), r: shift(edges.r, dx), t: shift(edges.t, dy), b: shift(edges.b, dy) } };
+    });
+    setConfirmed(false); setCenterResult(null);
+  }
   function setCollimationBorder(edge, cm) {
     setPosition(current => ({ ...current, collimation: setBorderCm(current, projection, edge, cm) }));
     setConfirmed(false); setCenterResult(null);
@@ -154,11 +171,15 @@ export default function useWorkstation({ rayidOn }) {
     const remaining = positioningIssues(next, projection);
     if (remaining.length) setAlert({ kind: 'auto', lines: ['Beam centering was updated. Patient positioning still requires correction.', ...remaining] });
   }
+  function centeringLines() {
+    return [
+      `The manually placed centering point does not match the recommended anatomical landmark for ${projection.label}.`,
+      `Recommended landmark: ${projection.centring}.`,
+      `Move the central ray ${Math.abs(position.x)} mm ${position.x > 0 ? 'left' : 'right'} and ${Math.abs(position.y)} mm ${position.y > 0 ? 'superiorly' : 'inferiorly'} to return to the landmark; tolerance is ±${projection.tolerances.centring} mm.`,
+    ];
+  }
   function centeringWarning() {
-    setAlert({ kind: 'centering', next: 'confirm',
-      lines: [`The selected centering point does not match the recommended anatomical landmark for ${projection.label}.`,
-        `Recommended centering: ${projection.centring}.`,
-        `Current offset: ${position.x} mm lateral, ${position.y} mm longitudinal.`] });
+    setAlert({ kind: 'centering', next: 'confirm', lines: centeringLines() });
   }
   function confirmPosition() {
     if (!active.current) { setConfirmed(true); return; }
@@ -257,6 +278,6 @@ export default function useWorkstation({ rayidOn }) {
   }
   return { worklist, exam, projection, simCase, stage, rayidOn, technique, plan, position, positionErrors, collimationErrors, collimationCm, collimationBorders, changeCollimation, setCollimationBorder, matchCollimation, confirmed, scenario, setScenario, simOpen, setSimOpen,
     capture, assessment, evaluating, centering, centerResult, alert, setAlert, busy, error, recommendationStatus, setRecommendationStatus, completion,
-    openExam, closeExam, chooseProjection, changeTechnique, applyRecommendations, changePosition, introduceError, autoCenter, applyCentering,
+    openExam, closeExam, chooseProjection, changeTechnique, applyRecommendations, changePosition, moveCentring, introduceError, autoCenter, applyCentering,
     confirmPosition, correctCentering, correctCollimation, prepare, requestExposure, repeat, requestAccept, continueWarning };
 }
