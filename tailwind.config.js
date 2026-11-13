@@ -28,6 +28,10 @@ module.exports = {
   				DEFAULT: 'hsl(var(--primary))',
   				foreground: 'hsl(var(--primary-foreground))'
   			},
+  			rayid: {
+  				DEFAULT: 'hsl(var(--rayid))',
+  				foreground: 'hsl(var(--rayid-foreground))'
+  			},
   			secondary: {
   				DEFAULT: 'hsl(var(--secondary))',
   				foreground: 'hsl(var(--secondary-foreground))'

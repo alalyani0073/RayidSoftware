@@ -3,6 +3,8 @@ import { Search, Loader2, ChevronRight } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import StatusPill from '@/components/StatusPill';
 import ScoreRing from '@/components/ScoreRing';
+import { Image } from '@/components/ui/image';
+import { projectionFor } from '@/lib/protocols';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { formatDateTime, scoreTone, verdictOf } from '@/lib/rayid';
@@ -163,6 +165,17 @@ export default function History() {
                   {selected.recommendation && <p className="mt-1.5 text-[11px] text-cyan-200/80">{selected.recommendation}</p>}
                 </div>
               </div>
+
+              {selected.simulation_snapshot && (
+                <div className="mt-3 flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.02] p-3">
+                  <Image src={projectionFor(selected.protocol_name).radiograph} alt={`Acquired image archived with the ${selected.protocol_name} record`} fittingType="fit" className="h-24 w-20 rounded-md border border-white/10 bg-black/40" />
+                  <div className="text-[11px] leading-relaxed text-slate-400">
+                    <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-slate-500">Acquired image linked to this record</p>
+                    <p className="mt-1">PACS transfer: <b className={selected.pacs_status === 'transferred' ? 'text-emerald-300' : 'text-amber-300'}>{selected.pacs_status === 'transferred' ? 'COMPLETED' : 'PENDING'}</b></p>
+                    <p>RAYID assessment: <b className="text-rose-300">{selected.quality_score ? `${selected.quality_score}%` : 'not run'}</b></p>
+                  </div>
+                </div>
+              )}
 
               <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
                 <Detail label="kVp" value={selected.kvp || '—'} />

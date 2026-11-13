@@ -104,6 +104,19 @@
       "type": "string",
       "title": "Rejection reason"
     },
+    "pacs_status": {
+      "type": "string",
+      "title": "PACS transfer",
+      "enum": [
+        "pending",
+        "transferred"
+      ],
+      "enumColors": [
+        "gray",
+        "green"
+      ],
+      "default": "pending"
+    },
     "kvp": {
       "type": "number",
       "title": "kVp"
@@ -171,6 +184,15 @@
         "scenario": {
           "type": "string"
         },
+        "caseScore": {
+          "type": "number"
+        },
+        "caseFault": {
+          "type": "string"
+        },
+        "caseLabel": {
+          "type": "string"
+        },
         "position": {
           "type": "object",
           "properties": {
@@ -200,6 +222,17 @@
             },
             "visible": {
               "type": "boolean"
+            },
+            "collimation": {
+              "type": "object",
+              "properties": {
+                "w": {
+                  "type": "number"
+                },
+                "h": {
+                  "type": "number"
+                }
+              }
             }
           }
         },
