@@ -16,6 +16,11 @@ const PREP = ['Confirm patient, examination and side marker.', 'Remove obscuring
 // receptor, foot dorsiflexed, unaffected leg clear of the field.
 const TIBIA_AP_REFERENCE = 'https://base44.app/api/apps/6af445986703f21f765252f1/files/mp/public/6af445986703f21f765252f1/dabb119cd_tibia-ap.jpg';
 
+// Tube-mounted camera reference supplied for the AP chest projection: the
+// patient stands with the sternum toward the tube, chest against the upright
+// receptor, hands on hips so the scapulae clear the lung fields.
+const CHEST_AP_REFERENCE = 'https://base44.app/api/apps/6af445986703f21f765252f1/files/mp/public/6af445986703f21f765252f1/8289f02ce_chest-ap.jpg';
+
 export const PROJECTIONS = [
   {
     key: 'chest_pa', name: 'Chest', view: 'PA', label: 'Chest — PA', region: 'Thorax', laterality: 'not_applicable',
@@ -38,9 +43,9 @@ export const PROJECTIONS = [
     default_kvp: 110, default_mas: 3.2, default_ma: 320, default_sid_cm: 120, grid: 'yes', aec: false,
     centring: 'T7 midline, about 8–10 cm below the jugular notch', cr: 'Anterior to posterior; perpendicular to the sternum and receptor',
     angulation: '0° supine; adapt to patient / receptor orientation', angle: 0, tolerances: { rotation: 4, centring: 20, angle: 2 },
-    focus: { x: 0.5, y: 0.45 }, field: { l: 20, r: 80, t: 6, b: 90 }, field_cm: [35, 43],
+    focus: { x: 0.5, y: 0.52 }, field: { l: 29, r: 71, t: 25, b: 82 }, field_cm: [35, 43],
     borders: { t: 'lung apices', b: 'costophrenic angles', l: 'left lateral chest wall', r: 'right lateral chest wall' },
-    reference: { male: `${M}94c284d4b_generated_image.png`, female: `${M}49f146e61_generated_image.png` }, cameraDirection: 'Overhead tube → anterior thorax → receptor behind patient',
+    reference: { male: CHEST_AP_REFERENCE, female: CHEST_AP_REFERENCE }, cameraDirection: 'Overhead tube → anterior thorax → receptor behind patient',
     prep: PREP, positioning: ['Supine on the table; receptor in the table Bucky behind the thorax.', 'Shoulders level; arms abducted clear of the lateral chest.', 'Centre at T7, about 8–10 cm below the jugular notch.', 'Include apices and costophrenic angles; full inspiration if tolerated.'],
     criteria: ['Apices and costophrenic angles included', 'Clavicular symmetry / no rotation', 'Adequate inspiration for patient condition', 'Mediastinum adequately penetrated', 'Sharp diaphragm and vascular margins'],
     limbLabel: 'Arms clear of thorax / shoulders level', rotationCriterion: 'Clavicular symmetry without excessive rotation', cutoff: 'costophrenic angles',
