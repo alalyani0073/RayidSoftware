@@ -134,13 +134,14 @@ Accept the image or consider corrective action when necessary.
 
 The project uses the following technologies:
 
-- Frontend: [Add actual frontend framework]
-- Backend: [Add actual backend technology]
-- Database: [Add actual database]
-- Development Platform: Base44
+- Frontend: React.js
+- Build Tool: Vite
+- Styling: Tailwind CSS
+- Backend Services: Base44 Platform
+- AI Integration: Base44 LLM Integration
 - Version Control: Git and GitHub
 
-*Update this section according to the actual technologies used in the project.*
+The current version is a functional prototype developed using the Base44 platform.
 
 ---
 
