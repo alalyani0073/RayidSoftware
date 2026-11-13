@@ -137,7 +137,7 @@ export const PROJECTIONS = [
     tolerances: { rotation: 2, centring: 12, angle: 2 },
     focus: { x: 0.5, y: 0.55 }, field: { l: 10, r: 90, t: 8, b: 94 }, field_cm: [35, 43],
     borders: { t: 'iliac crests', b: 'lesser trochanters and proximal femora', l: 'left iliac wing', r: 'right iliac wing' },
-    reference: { male: `${M}f2317844f_generated_image.png`, female: `${M}f2317844f_generated_image.png` }, cameraDirection: 'Overhead tube → anterior pelvis → table Bucky',
+    reference: { male: `${M}537ee6314_generated_image.png`, female: `${M}537ee6314_generated_image.png` }, cameraDirection: 'Overhead tube → anterior pelvis → table Bucky',
     prep: PREP, positioning: ['Supine; pelvis level, legs extended and slightly separated.', 'ASIS equidistant from the table; no rotation.', 'Centre about 5 cm above the pubic symphysis.', 'Include iliac crests to proximal femora.'],
     criteria: ['Iliac crests and both proximal femora included', 'Symmetric obturator foramina', 'Sacroiliac joints demonstrated', 'Pubic symphysis centred', 'Sharp trabecular detail of the pelvis'],
     limbLabel: 'Legs extended / pelvis level', rotationCriterion: 'Obturator foramina and iliac wings symmetric', cutoff: 'iliac crests',
