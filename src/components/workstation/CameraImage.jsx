@@ -32,7 +32,7 @@ export default function CameraImage({ src, alt, mirrored, children }) {
         }}
         onError={() => setLoaded({ src, status: 'error', aspect })}
       />
-      <div className="absolute inset-0 z-10">{children}</div>
+      <div data-camera-overlay="" className="pointer-events-none absolute inset-0 z-10">{children}</div>
       {status !== 'ready' && <div role="status" className="absolute bottom-3 left-3 z-20 flex max-w-[90%] items-center gap-2 rounded-sm bg-ws-canvas/80 p-2 text-xs text-muted-foreground">
         {status === 'loading' ? <><Loader2 className="h-4 w-4 shrink-0 animate-spin" /><span>Loading camera image…</span></> : <>
           <CameraOff className="h-4 w-4 shrink-0" /><span>Camera image could not be loaded.</span>

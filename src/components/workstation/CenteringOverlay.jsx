@@ -49,7 +49,7 @@ export default function CenteringOverlay({ projection, position, recommendation,
       aria-valuemin={0}
       aria-valuemax={100}
       onPointerDown={e => startDrag(edge, e)}
-      className={`absolute flex touch-none items-center justify-center ${vertical ? 'w-5 -translate-x-1/2 cursor-ew-resize' : 'h-5 -translate-y-1/2 cursor-ns-resize'} ${draggable ? 'rounded-sm bg-rayid/15 hover:bg-rayid/30' : ''}`}
+      className={`pointer-events-auto absolute flex touch-none items-center justify-center ${vertical ? 'w-5 -translate-x-1/2 cursor-ew-resize' : 'h-5 -translate-y-1/2 cursor-ns-resize'} ${draggable ? 'rounded-sm bg-rayid/15 hover:bg-rayid/30' : ''}`}
       style={style}
     >
       <span className={`rounded-full bg-rayid shadow-[0_0_10px_hsl(var(--rayid))] ${vertical ? 'h-8 w-[3px]' : 'h-[3px] w-8'}`} />
@@ -66,7 +66,7 @@ export default function CenteringOverlay({ projection, position, recommendation,
       <rect x={c.l} y={c.t} width={fw} height={fh} fill="none" stroke="currentColor" strokeWidth="0.55" />
       <path d={`M ${cx} ${c.t} V ${c.b} M ${c.l} ${cy} H ${c.r}`} stroke="currentColor" strokeWidth="0.15" opacity="0.5" />
       <g className="text-chart-3"><circle cx={cx} cy={cy} r="1.8" fill="none" stroke="currentColor" strokeWidth="0.5" /></g>
-      {recommendation && <g className="text-chart-2"><path d={`M ${cx} ${cy} L ${x} ${y}`} stroke="currentColor" strokeWidth="0.6" /><circle cx={x} cy={y} r="3" fill="none" stroke="currentColor" strokeWidth="0.6" /><path d={`M ${x - 5} ${y} H ${x + 5} M ${x} ${y - 5} V ${y + 5}`} stroke="currentColor" strokeWidth="0.4" /></g>}
+      {position.visible && recommendation && <g className="text-chart-2"><path d={`M ${cx} ${cy} L ${x} ${y}`} stroke="currentColor" strokeWidth="0.6" /><circle cx={x} cy={y} r="3" fill="none" stroke="currentColor" strokeWidth="0.6" /><path d={`M ${x - 5} ${y} H ${x + 5} M ${x} ${y - 5} V ${y + 5}`} stroke="currentColor" strokeWidth="0.4" /></g>}
     </svg>
     <span className="pointer-events-none absolute left-2 top-2 rounded-sm bg-ws-canvas/90 px-2 py-1 text-[11px] text-rayid">{busy ? 'Locating anatomical landmark…' : `Field ${fieldSizeCm(position, projection).join(' × ')} cm · req. ${projection.field_cm.join(' × ')}`}</span>
     {draggable && <span className="pointer-events-none absolute right-2 top-2 rounded-sm bg-ws-canvas/90 px-2 py-1 text-[10px] text-rayid">Drag any of the four shutter edges</span>}
@@ -74,7 +74,7 @@ export default function CenteringOverlay({ projection, position, recommendation,
     <div className="pointer-events-none absolute inset-x-2 bottom-2 flex flex-col items-start gap-1">
       {findings.slice(0, 2).map((f) => <span key={f.edge + f.kind} className="max-w-full rounded-sm bg-ws-canvas/90 px-2 py-1 text-left text-[10px] font-semibold leading-snug text-rayid">{f.message}</span>)}
       {off && <span className="rounded-sm bg-ws-canvas/90 px-2 py-1 text-[10px] font-semibold text-rayid">Central ray {Math.abs(position.x)} mm {position.x >= 0 ? 'lateral' : 'medial'} of {projection.centring}</span>}
-      {recommendation && <span className="rounded-sm bg-ws-canvas/90 px-2 py-1 text-[11px] text-chart-2">Green: recommended landmark · {projection.centring}</span>}
+      {position.visible && recommendation && <span className="rounded-sm bg-ws-canvas/90 px-2 py-1 text-[11px] text-chart-2">Green: recommended landmark · {projection.centring}</span>}
     </div>
   </div>;
 }
