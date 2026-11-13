@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { projectionByKey, projectionFor } from '@/lib/protocols';
 import useModalityWorklist from '@/hooks/useModalityWorklist';
-import { caseFor, casePosition } from '@/components/workstation/simCases';
+import { caseFor, openingPosition } from '@/components/workstation/simCases';
 import { baselineTechnique, exposureTime, initialPosition, recommendedTechnique, positioningIssues, exposureIssues, collimationIssues, centeringOffset, fieldSizeCm, sampleFor, scriptedAssessment, collimation, borderCm, setBorderCm, requiredEdges, EDGES, alignmentSignature, movementLines } from '@/components/workstation/simulation';
 
 export default function useWorkstation({ rayidOn }) {
@@ -116,15 +116,16 @@ export default function useWorkstation({ rayidOn }) {
     aiRun.current++; warned.current = '';
     const p = projectionFor(record.protocol_name);
     const assigned = caseFor(record);
-    const saved = record.simulation_snapshot?.position ? record.simulation_snapshot : null;
-    const values = saved?.technique || baselineTechnique(p);
-    setExam(record); setSimCase(assigned); setTechnique(values);
-    const startingPosition = saved?.position ? { ...initialPosition(p), ...saved.position } : casePosition(p, assigned.fault);
+    // Every study opens at the start of the examination workflow: no previously
+    // acquired image, technique, positioning, score or review state is restored,
+    // so a study can never reopen as an examination already performed.
+    setExam(record); setSimCase(assigned); setTechnique(baselineTechnique(p));
+    const startingPosition = openingPosition(p, assigned.fault);
     setPosition(startingPosition); rememberAlignment(startingPosition); setAdjusted(false);
     setScenario(assigned.scenario);
-    setCapture(saved ? { ...saved, patient: record, caseScore: assigned.score, caseFault: assigned.fault, caseLabel: assigned.label } : null);
-    setStage(saved ? 'review' : 'pre');
-    setConfirmed(Boolean(saved)); setAssessment(null); setAlert(null); setError('');
+    setCapture(null);
+    setStage('pre');
+    setConfirmed(false); setAssessment(null); setAlert(null); setError('');
     setCenterResult(null); setCentering(false); setRecommendationStatus('available'); setCompletion(''); setSimOpen(false);
   }
   function chooseProjection(key) {
@@ -134,7 +135,7 @@ export default function useWorkstation({ rayidOn }) {
     const side = next.laterality === 'not_applicable' ? 'not_applicable' : (projection.region === next.region && ['left', 'right'].includes(exam.laterality) ? exam.laterality : next.laterality);
     warned.current = '';
     setExam({ ...exam, protocol_name: next.label, body_part: next.region, laterality: side });
-    const nextPosition = casePosition(next, simCase.fault);
+    const nextPosition = openingPosition(next, simCase.fault);
     setTechnique(baselineTechnique(next)); setPosition(nextPosition); rememberAlignment(nextPosition); setAdjusted(false); setStage('pre');
     setConfirmed(false); setCapture(null); setAssessment(null); setCenterResult(null); setCentering(false);
     setAlert(null); setScenario(simCase.scenario); setRecommendationStatus('available');

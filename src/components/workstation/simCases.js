@@ -43,3 +43,11 @@ export function casePosition(p, fault) {
   if (fault === 'positioning') return { ...base, angle: p.angle + Math.round(p.tolerances.angle * 2 + 3), limb: false };
   return base;
 }
+
+// Beam centring and the collimation field belong to the examination rather than
+// the patient, so every study opens with the recommended centring point and the
+// recommended field for its projection. Only the patient's own presenting
+// condition (rotation, breath hold, alignment, external objects) carries over.
+export function openingPosition(p, fault) {
+  return { ...casePosition(p, fault), x: 0, y: 0, collimation: { ...requiredEdges(p) } };
+}
