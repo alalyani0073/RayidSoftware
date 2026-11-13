@@ -1,6 +1,6 @@
 import { collimation, fieldSizeCm, centeringOffset, requiredEdges, collimationFindings } from '@/components/workstation/simulation';
 
-const shade = 'rgba(4, 10, 14, 0.72)';
+const shade = 'hsl(var(--ws-canvas) / 0.3)';
 
 export default function CenteringOverlay({ projection, position, recommendation, busy, onCollimate }) {
   const x = projection.focus.x * 100;
