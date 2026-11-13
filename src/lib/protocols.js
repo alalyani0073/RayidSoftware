@@ -39,6 +39,11 @@ const ANKLE_AP_REFERENCE = 'https://base44.app/api/apps/6af445986703f21f765252f1
 // receptor, hands on hips so the scapulae clear the lung fields.
 const CHEST_PA_REFERENCE = 'https://base44.app/api/apps/6af445986703f21f765252f1/files/mp/public/6af445986703f21f765252f1/868cdf153_chest-pa.png';
 
+// Tube-mounted camera reference supplied for the lateral knee projection: the
+// affected side is toward the upright receptor, knee flexed, the joint seen in
+// profile down the horizontal central ray.
+const KNEE_LAT_REFERENCE = 'https://base44.app/api/apps/6af445986703f21f765252f1/files/mp/public/6af445986703f21f765252f1/431096365_knee-lateral.png';
+
 const KNEE_AP_REFERENCE = 'https://base44.app/api/apps/6af445986703f21f765252f1/files/mp/public/6af445986703f21f765252f1/338f04360_knee-ap.png';
 
 export const PROJECTIONS = [
@@ -235,9 +240,9 @@ export const PROJECTIONS = [
     default_kvp: 66, default_mas: 4, default_ma: 200, default_sid_cm: 100, grid: 'no', aec: false,
     centring: '2.5 cm distal to the medial femoral epicondyle', cr: 'Horizontal, medial to lateral; 5–7° cephalad',
     angulation: '5–7° cephalad; 6° for this projection', angle: 6, tolerances: { rotation: 2, centring: 8, angle: 1 }, flexion: [20, 30],
-    focus: { x: 0.5, y: 0.5 }, field: { l: 30, r: 70, t: 8, b: 92 }, field_cm: [18, 24],
+    focus: { x: 0.655, y: 0.3 }, field: { l: 50, r: 80, t: 15.5, b: 44.5 }, field_cm: [18, 24],
     borders: { t: 'distal femoral metaphysis', b: 'proximal tibial metaphysis', l: 'anterior patella and soft tissue', r: 'posterior femoral and tibial condyles' },
-    reference: { male: `${M}a87d81d4b_generated_image.png`, female: `${M}a87d81d4b_generated_image.png` }, cameraDirection: 'Horizontal tube → medial knee → lateral surface / receptor',
+    reference: { male: KNEE_LAT_REFERENCE, female: KNEE_LAT_REFERENCE }, cameraDirection: 'Horizontal tube → medial knee → lateral surface / receptor',
     prep: PREP, positioning: ['Affected side down on the cassette; opposite leg drawn back.', 'Flex the knee 20–30° if safe.', 'Epicondyles perpendicular to the receptor; condyles superimposed.', 'Centre 2.5 cm below the medial epicondyle with 5–7° cephalad CR.'],
     criteria: ['Distal femur and proximal tibia included', 'Femoral condyles superimposed', 'Patella in profile', 'Patellofemoral joint demonstrated', 'No motion blur'],
     limbLabel: 'Affected side down / epicondyles perpendicular', rotationCriterion: 'Femoral condyles superimposed; patella in profile', cutoff: 'proximal tibia',
