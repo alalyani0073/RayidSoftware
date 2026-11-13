@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Image } from '@/components/ui/image';
 import { useSize } from '@/hooks/use-size';
 
@@ -6,13 +6,13 @@ import { useSize } from '@/hooks/use-size';
  * The single image display standard used everywhere clinical imagery appears.
  * The frame takes the largest box of the image's own aspect ratio that fits the
  * space it is given: it always fills the pane, keeps proportions, never crops
- * and never distorts. Overlays passed as children are positioned against the
- * frame, so annotation geometry stays locked to the image.
+ * and never distorts. The ratio is read from the image itself unless one is
+ * given explicitly, so annotation geometry stays locked to the anatomy.
  */
 export default function ImageFrame({
   src,
   alt,
-  ratio = '4 / 5',
+  ratio,
   className = '',
   frameClassName = '',
   imageStyle,
@@ -21,8 +21,21 @@ export default function ImageFrame({
 }) {
   const hostRef = useRef(null);
   const size = useSize(hostRef);
-  const [aw, ah] = String(ratio).split('/').map((value) => Number(value.trim()) || 1);
-  const aspect = aw / ah;
+  const [natural, setNatural] = useState(null);
+
+  useEffect(() => {
+    if (ratio) return;
+    let alive = true;
+    const probe = new window.Image();
+    probe.onload = () => {
+      if (alive && probe.naturalWidth && probe.naturalHeight) setNatural(probe.naturalWidth / probe.naturalHeight);
+    };
+    probe.src = src;
+    return () => { alive = false; };
+  }, [src, ratio]);
+
+  const explicit = ratio ? String(ratio).split('/').map((value) => Number(value.trim()) || 1) : null;
+  const aspect = explicit ? explicit[0] / explicit[1] : natural || 0.8;
   const availW = Math.max(140, (size?.width || 360) - 2);
   const availH = Math.max(140, (size?.height || 360) - 2);
   const width = Math.round(Math.min(availW, availH * aspect));

@@ -1,13 +1,15 @@
+import { requiredEdges, scaleField } from '@/components/workstation/simulation';
+
 // One fixed simulated fault per sample patient, so the displayed sample X-ray always
 // matches the described error. Assigned automatically; the operator never picks it.
 const CASES = {
   correct: { fault: 'correct', scenario: 'auto', label: 'Correct positioning · criteria met', score: 94 },
   centering: { fault: 'centering', scenario: 'auto', label: 'Incorrect centering', score: 68 },
-  cutoff: { fault: 'cutoff', scenario: 'cutoff', label: 'Anatomical cut-off', score: 72 },
+  cutoff: { fault: 'cutoff', scenario: 'auto', label: 'Anatomical cut-off', score: 72 },
   collimation: { fault: 'collimation', scenario: 'auto', label: 'Incorrect collimation', score: 81 },
   rotation: { fault: 'rotation', scenario: 'auto', label: 'Patient rotation', score: 74 },
-  motion: { fault: 'motion', scenario: 'motion', label: 'Motion artifact', score: 69 },
-  artifact: { fault: 'artifact', scenario: 'artifact', label: 'External artifact', score: 76 },
+  motion: { fault: 'motion', scenario: 'auto', label: 'Motion artifact', score: 69 },
+  artifact: { fault: 'artifact', scenario: 'auto', label: 'External artifact', score: 76 },
   positioning: { fault: 'positioning', scenario: 'auto', label: 'Incorrect positioning', score: 71 },
 };
 
@@ -29,12 +31,13 @@ export function caseFor(record) {
   return CASES[mapped || fallback];
 }
 
-// Position values that actually reproduce the assigned fault in the sample image.
+// Position values that reproduce the assigned fault in the sample image, using
+// each projection's own required field rather than a shared rectangle.
 export function casePosition(p, fault) {
-  const base = { x: 0, y: 0, rotation: 0, angle: p.angle, limb: true, breathing: true, coverage: true, visible: true, collimation: { w: p.field.w, h: p.field.h } };
+  const base = { x: 0, y: 0, rotation: 0, angle: p.angle, limb: true, breathing: true, coverage: true, visible: true, collimation: { ...requiredEdges(p) } };
   if (fault === 'centering') return { ...base, x: 34, y: -6 };
-  if (fault === 'collimation') return { ...base, collimation: { w: p.field.w * 1.34, h: p.field.h * 1.28 } };
-  if (fault === 'cutoff') return { ...base, y: -p.tolerances.centring * 1.8, collimation: { w: p.field.w * 0.66, h: p.field.h * 0.74 } };
+  if (fault === 'collimation') return { ...base, collimation: scaleField(p, 1.34, 1.26) };
+  if (fault === 'cutoff') return { ...base, y: -p.tolerances.centring * 1.8, collimation: scaleField(p, 0.7, 0.76) };
   if (fault === 'rotation') return { ...base, rotation: Math.round(p.tolerances.rotation * 3.2) || 7 };
   if (fault === 'motion') return { ...base, breathing: false };
   if (fault === 'positioning') return { ...base, angle: p.angle + Math.round(p.tolerances.angle * 2 + 3), limb: false };

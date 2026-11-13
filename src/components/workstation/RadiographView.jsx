@@ -1,29 +1,26 @@
 import { AlertTriangle, Crosshair } from 'lucide-react';
-import { collimationFault, centeringOffset } from '@/components/workstation/simulation';
-import { radiographRatio } from '@/lib/protocols';
+import { collimation, collimationFindings, centeringOffset, requiredEdges } from '@/components/workstation/simulation';
 import ImageFrame from '@/components/workstation/ImageFrame';
 
 export default function RadiographView({ projection, capture, view, rayidOn, assessment }) {
   const s = capture.sample;
   const pos = capture.position;
   const filter = `contrast(${view.contrast}%) brightness(${view.brightness}%) invert(${view.inverted ? 1 : 0}) blur(${s.motion ? 2.8 : 0}px)`;
-  const field = pos.collimation || projection.field;
-  const state = collimationFault(pos, projection);
+  const c = collimation(pos, projection);
+  const req = requiredEdges(projection);
+  const findings = collimationFindings(pos, projection);
+  const wide = findings.filter((f) => f.kind === 'wide');
+  const tight = findings.filter((f) => f.kind === 'tight');
   const off = centeringOffset(pos, projection);
   const rotated = Math.abs(pos.rotation) > projection.tolerances.rotation;
   const show = Boolean(rayidOn && assessment);
   const shiftX = (pos.x || 0) * 0.45;
   const shiftY = (pos.y || 0) * -0.45;
-  const box = (w, h) => {
-    const cw = Math.min(w, 96);
-    const ch = Math.min(h, 96);
-    return { left: `${(100 - cw) / 2}%`, top: `${(100 - ch) / 2}%`, width: `${cw}%`, height: `${ch}%` };
-  };
+  const box = (edges) => ({ left: `${edges.l}%`, top: `${edges.t}%`, width: `${edges.r - edges.l}%`, height: `${edges.b - edges.t}%` });
   return <div className="flex h-full min-h-0 w-full flex-col items-center">
     <ImageFrame
       src={projection.radiograph}
       alt={`Radiograph for ${projection.label}${show && assessment.detected.length ? ` with the detected error marked: ${assessment.detected[0].title}` : ''}`}
-      ratio={radiographRatio(projection.key)}
       frameClassName="bg-ws-canvas"
       imageStyle={{ filter, transform: `translate(${shiftX}%, ${shiftY}%) rotate(${s.rotated ? 6 : 0}deg) scale(${view.zoom})` }}
     >
@@ -34,9 +31,14 @@ export default function RadiographView({ projection, capture, view, rayidOn, ass
         <span className="absolute inset-x-0 top-1 flex items-center justify-center gap-1 px-1 text-center text-[10px] font-bold text-destructive"><AlertTriangle className="h-3 w-3" />CUT-OFF · {projection.cutoff.toUpperCase()}</span>
       </div>}
 
-      {show && state && <div className="pointer-events-none absolute border-2 border-dashed border-destructive" style={box(field.w, field.h)}>
-        <span className="absolute left-0 top-0 whitespace-nowrap bg-ws-canvas/95 px-1 text-[10px] font-bold text-destructive">FIELD {Math.round((field.w / projection.field.w) * projection.field_cm[0])} × {Math.round((field.h / projection.field.h) * projection.field_cm[1])} cm · REQ. {projection.field_cm.join(' × ')}</span>
-      </div>}
+      {show && (wide.length > 0 || tight.length > 0) && <>
+        <div className="pointer-events-none absolute border-2 border-dashed border-chart-2" style={box(req)} />
+        <div className="pointer-events-none absolute border-2 border-destructive" style={box(c)}>
+          <span className="absolute left-0 top-0 whitespace-nowrap bg-ws-canvas/95 px-1 text-[10px] font-bold text-destructive">
+            FIELD {tight.length ? '· EXCLUDES ANATOMY' : '· WIDER THAN REQUIRED'}
+          </span>
+        </div>
+      </>}
 
       {show && off && <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-1/2 top-1/2 h-14 w-14 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-dashed border-chart-2"><span className="absolute -top-5 left-1/2 -translate-x-1/2 whitespace-nowrap bg-ws-canvas/95 px-1 text-[9px] font-semibold text-chart-2">RECOMMENDED</span></div>

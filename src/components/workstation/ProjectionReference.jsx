@@ -22,7 +22,6 @@ export default function ProjectionReference({ ws, referenceOnly = false }) {
       <ImageFrame
         src={source}
         alt={`Posed patient positioning from the X-ray tube housing: ${p.label}. ${p.cameraDirection}`}
-        ratio={p.cameraAspect}
         frameProps={{ 'data-camera-frame': '' }}
         imageStyle={{ transform: mirrored ? 'scaleX(-1)' : undefined }}
       >

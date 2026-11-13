@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import StatusPill from '@/components/StatusPill';
 import ScoreRing from '@/components/ScoreRing';
 import ImageFrame from '@/components/workstation/ImageFrame';
-import { projectionFor, radiographRatio } from '@/lib/protocols';
+import { projectionFor } from '@/lib/protocols';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { formatDateTime, scoreTone, verdictOf } from '@/lib/rayid';
@@ -172,7 +172,6 @@ export default function History() {
                     <ImageFrame
                       src={projectionFor(selected.protocol_name).radiograph}
                       alt={`Acquired image archived with the ${selected.protocol_name} record`}
-                      ratio={radiographRatio(projectionFor(selected.protocol_name).key)}
                       frameClassName="border-white/10 bg-black/60"
                     />
                   </div>

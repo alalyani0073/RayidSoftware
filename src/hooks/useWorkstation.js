@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { projectionByKey, projectionFor } from '@/lib/protocols';
 import useModalityWorklist from '@/hooks/useModalityWorklist';
 import { caseFor, casePosition } from '@/components/workstation/simCases';
-import { baselineTechnique, exposureTime, initialPosition, recommendedTechnique, positioningIssues, exposureIssues, collimationIssues, centeringOffset, fieldSizeCm, sampleFor, scriptedAssessment } from '@/components/workstation/simulation';
+import { baselineTechnique, exposureTime, initialPosition, recommendedTechnique, positioningIssues, exposureIssues, collimationIssues, centeringOffset, fieldSizeCm, sampleFor, scriptedAssessment, collimation, borderCm, setBorderCm, requiredEdges, EDGES } from '@/components/workstation/simulation';
 
 export default function useWorkstation({ rayidOn }) {
   const worklist = useModalityWorklist();
@@ -34,6 +34,7 @@ export default function useWorkstation({ rayidOn }) {
   const positionErrors = rayidOn ? positioningIssues(position, projection) : [];
   const collimationErrors = rayidOn ? collimationIssues(position, projection) : [];
   const collimationCm = fieldSizeCm(position, projection);
+  const collimationBorders = useMemo(() => EDGES.reduce((acc, edge) => ({ ...acc, [edge]: borderCm(position, projection, edge) }), {}), [position, projection]);
 
   useEffect(() => {
     if (!rayidOn) {
@@ -63,7 +64,8 @@ export default function useWorkstation({ rayidOn }) {
     if (!rayidOn || stage !== 'positioning' || capture || alert) return;
     const target = collimationErrors.length ? 'collimation' : centeringOffset(position, projection) ? 'centering' : '';
     if (!target) { warned.current = ''; return; }
-    const signature = `${target}:${position.x}:${position.y}:${position.collimation?.w}:${position.collimation?.h}`;
+    const edges = collimation(position, projection);
+    const signature = `${target}:${position.x}:${position.y}:${edges.l}:${edges.r}:${edges.t}:${edges.b}`;
     if (warned.current === signature) return;
     const timer = setTimeout(() => {
       if (!active.current) return;
@@ -115,13 +117,17 @@ export default function useWorkstation({ rayidOn }) {
   function changePosition(key, value) {
     setPosition(current => ({ ...current, [key]: value })); setConfirmed(false); setCenterResult(null);
   }
-  function changeCollimation(key, value) {
-    setPosition(current => ({ ...current, collimation: { ...(current.collimation || projection.field), [key]: value } }));
+  function changeCollimation(edge, percent) {
+    setPosition(current => ({ ...current, collimation: { ...collimation(current, projection), [edge]: percent } }));
     setConfirmed(false);
+  }
+  function setCollimationBorder(edge, cm) {
+    setPosition(current => ({ ...current, collimation: setBorderCm(current, projection, edge, cm) }));
+    setConfirmed(false); setCenterResult(null);
   }
   function matchCollimation() {
     if (!active.current) return;
-    setPosition(current => ({ ...current, collimation: { w: projection.field.w, h: projection.field.h } }));
+    setPosition(current => ({ ...current, collimation: { ...requiredEdges(projection) } }));
     setConfirmed(false); setCenterResult(null);
   }
   function introduceError() {
@@ -169,7 +175,7 @@ export default function useWorkstation({ rayidOn }) {
     else setConfirmed(true);
   }
   function correctCollimation() {
-    const next = { ...position, collimation: { w: projection.field.w, h: projection.field.h } };
+    const next = { ...position, collimation: { ...requiredEdges(projection) } };
     setPosition(next); setAlert(null);
     if (centeringOffset(next, projection)) centeringWarning();
     else setConfirmed(true);
@@ -249,7 +255,7 @@ export default function useWorkstation({ rayidOn }) {
     if (kind === 'override') finish(true);
     if (kind === 'quality') setAlert({ kind: 'override', result: assessment });
   }
-  return { worklist, exam, projection, simCase, stage, rayidOn, technique, plan, position, positionErrors, collimationErrors, collimationCm, changeCollimation, matchCollimation, confirmed, scenario, setScenario, simOpen, setSimOpen,
+  return { worklist, exam, projection, simCase, stage, rayidOn, technique, plan, position, positionErrors, collimationErrors, collimationCm, collimationBorders, changeCollimation, setCollimationBorder, matchCollimation, confirmed, scenario, setScenario, simOpen, setSimOpen,
     capture, assessment, evaluating, centering, centerResult, alert, setAlert, busy, error, recommendationStatus, setRecommendationStatus, completion,
     openExam, closeExam, chooseProjection, changeTechnique, applyRecommendations, changePosition, introduceError, autoCenter, applyCentering,
     confirmPosition, correctCentering, correctCollimation, prepare, requestExposure, repeat, requestAccept, continueWarning };
